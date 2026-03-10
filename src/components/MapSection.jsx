@@ -9,7 +9,7 @@ export default function MapSection({ park }) {
   const [hRef, hVis]    = useInView();
   const [mRef, mVis]    = useInView();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!mVis || mapObj.current) return;
     const L = window.L;
