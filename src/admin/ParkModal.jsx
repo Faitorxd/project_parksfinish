@@ -1,0 +1,455 @@
+import React, { useState } from 'react';
+import { X } from 'lucide-react';
+import ImageUploader from './ImageUploader';
+
+const TABS = [
+  { id: 'basic',  label: '📋 Datos'         },
+  { id: 'cover',  label: '📸 Portada'        },
+  { id: 'games',  label: '🎮 Juegos'         },
+  { id: 'points', label: '📍 Mapa'           },
+];
+
+const PT_OPTS = [
+  { v: 'parking',  l: '🅿️ Parking'     },
+  { v: 'entrance', l: '🚪 Entrada'      },
+  { v: 'games',    l: '🎮 Zona juegos'  },
+  { v: 'rest',     l: '🪑 Descanso'     },
+];
+
+const PT_COLORS = { parking:'#D97706', entrance:'#16A34A', games:'#0284C7', rest:'#475569' };
+
+function Field({ label, children, required }) {
+  return (
+    <div>
+      <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#64748B',
+        marginBottom:5, letterSpacing:'.6px', textTransform:'uppercase' }}>
+        {label}{required && <span style={{color:'#EF4444'}}> *</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+const inputStyle = {
+  width:'100%', padding:'10px 14px', border:'1.5px solid #E2E8F0',
+  borderRadius:10, fontSize:14, outline:'none', fontFamily:'Plus Jakarta Sans,sans-serif',
+  background:'white', color:'#0F172A', transition:'border-color .2s',
+};
+
+export default function ParkModal({ mode, park, onSave, onClose }) {
+  const isEdit = mode === 'edit';
+  const [tab,    setTab]    = useState('basic');
+  const [saving, setSaving] = useState(false);
+
+  const [f, setF] = useState({
+    name:        park?.name        || '',
+    city:        park?.city        || '',
+    address:     park?.address     || '',
+    lat:         String(park?.lat  || ''),
+    lng:         String(park?.lng  || ''),
+    description: park?.description || '',
+    badge:       park?.badge       || '🏞️ PARQUE',
+    emoji:       park?.emoji       || '🌳',
+    color:       park?.color       || '#0284C7',
+    color2:      park?.color2      || '#38BDF8',
+    tags:        Array.isArray(park?.tags) ? park.tags.join(', ') : (park?.tags || ''),
+    active:      park?.active !== false,
+    coverUrl:    park?.coverUrl    || null,
+    coverFile:   null,
+    games:       (park?.games     || []).map(g => ({ ...g, photoFile: null })),
+    mapPoints:   (park?.mapPoints || []).map(m => ({ ...m, photoFile: null })),
+  });
+
+  const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+
+  /* ── Game sub-form ── */
+  const [gOpen, setGOpen] = useState(false);
+  const [gf, setGf] = useState({ emoji:'🎮', name:'', tag:'', shortDesc:'', fullDesc:'',
+    color:'#0284C7', light:'#EFF6FF', photo:null, photoFile:null });
+  const addGame = () => {
+    if (!gf.name.trim()) return;
+    set('games', [...f.games, { ...gf, id: 'g' + Date.now() }]);
+    setGf({ emoji:'🎮', name:'', tag:'', shortDesc:'', fullDesc:'', color:'#0284C7', light:'#EFF6FF', photo:null, photoFile:null });
+    setGOpen(false);
+  };
+
+  /* ── Point sub-form ── */
+  const [pOpen, setPOpen] = useState(false);
+  const [pf, setPf] = useState({ type:'games', emoji:'🎮', label:'', desc:'', lat:'', lng:'',
+    color:'#0284C7', photo:null, photoFile:null });
+  const addPoint = () => {
+    if (!pf.label.trim() || !pf.lat || !pf.lng) return;
+    set('mapPoints', [...f.mapPoints, { ...pf, id: 'mp' + Date.now() }]);
+    setPf({ type:'games', emoji:'🎮', label:'', desc:'', lat:'', lng:'', color:'#0284C7', photo:null, photoFile:null });
+    setPOpen(false);
+  };
+
+  const submit = async () => {
+    if (!f.name.trim() || !f.city.trim()) { alert('Nombre y ciudad son obligatorios.'); return; }
+    setSaving(true);
+    try {
+      await onSave({
+        ...f,
+        lat:  parseFloat(f.lat)  || 40.4168,
+        lng:  parseFloat(f.lng)  || -3.7038,
+        tags: f.tags.split(',').map(t => t.trim()).filter(Boolean),
+      });
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{
+      position:'fixed', inset:0, background:'rgba(15,23,42,.55)',
+      backdropFilter:'blur(6px)', zIndex:500,
+      display:'flex', alignItems:'flex-start', justifyContent:'center',
+      padding:'20px 16px', overflowY:'auto',
+    }}>
+      <div style={{
+        background:'white', borderRadius:24, width:'100%', maxWidth:640,
+        boxShadow:'0 32px 80px rgba(0,0,0,.3)',
+        animation:'popUp .28s cubic-bezier(.34,1.4,.64,1)',
+        marginTop: 20,
+      }}>
+        {/* Header */}
+        <div style={{ padding:'22px 24px 0', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:20, fontWeight:800, color:'#0F172A' }}>
+            {isEdit ? '✏️ Editar parque' : '➕ Nuevo parque'}
+          </h3>
+          <button onClick={onClose} style={{
+            background:'#F1F5F9', border:'none', borderRadius:'50%',
+            width:36, height:36, cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center',
+          }}><X size={16} color="#64748B" /></button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display:'flex', borderBottom:'1.5px solid #E2E8F0', margin:'16px 0 0', overflowX:'auto' }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
+              padding:'11px 18px', border:'none', background:'none', cursor:'pointer',
+              fontSize:13, fontWeight:700, whiteSpace:'nowrap',
+              color: tab === t.id ? '#0284C7' : '#64748B',
+              borderBottom: tab === t.id ? '2px solid #0284C7' : '2px solid transparent',
+              marginBottom: -1.5,
+            }}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        <div style={{ padding:'22px 24px', maxHeight:'62vh', overflowY:'auto' }}>
+
+          {/* ── DATOS BÁSICOS ── */}
+          {tab === 'basic' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <Field label="Nombre" required>
+                  <input style={inputStyle} value={f.name} onChange={e => set('name', e.target.value)}
+                    placeholder="Parque del Avión"
+                    onFocus={e => e.target.style.borderColor='#0284C7'}
+                    onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+                </Field>
+                <Field label="Ciudad" required>
+                  <input style={inputStyle} value={f.city} onChange={e => set('city', e.target.value)}
+                    placeholder="Getafe, Madrid"
+                    onFocus={e => e.target.style.borderColor='#0284C7'}
+                    onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+                </Field>
+              </div>
+              <Field label="Dirección completa">
+                <input style={inputStyle} value={f.address} onChange={e => set('address', e.target.value)}
+                  placeholder="Av. Salvador Allende, 8"
+                  onFocus={e => e.target.style.borderColor='#0284C7'}
+                  onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+              </Field>
+              <Field label="Descripción">
+                <textarea style={{ ...inputStyle, resize:'vertical' }} rows={3}
+                  value={f.description} onChange={e => set('description', e.target.value)}
+                  placeholder="Descripción del parque y su propuesta de inclusión…"
+                  onFocus={e => e.target.style.borderColor='#0284C7'}
+                  onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+              </Field>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <Field label="Emoji del parque">
+                  <input style={inputStyle} value={f.emoji} onChange={e => set('emoji', e.target.value)} placeholder="✈️"
+                    onFocus={e => e.target.style.borderColor='#0284C7'}
+                    onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+                </Field>
+                <Field label="Badge / Etiqueta">
+                  <input style={inputStyle} value={f.badge} onChange={e => set('badge', e.target.value)} placeholder="🥇 PARQUE ORO"
+                    onFocus={e => e.target.style.borderColor='#0284C7'}
+                    onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+                </Field>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <Field label="Latitud">
+                  <input style={inputStyle} value={f.lat} onChange={e => set('lat', e.target.value)} placeholder="40.3084"
+                    onFocus={e => e.target.style.borderColor='#0284C7'}
+                    onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+                </Field>
+                <Field label="Longitud">
+                  <input style={inputStyle} value={f.lng} onChange={e => set('lng', e.target.value)} placeholder="-3.7139"
+                    onFocus={e => e.target.style.borderColor='#0284C7'}
+                    onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+                </Field>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <Field label="Color principal">
+                  <div style={{ display:'flex', gap:10, alignItems:'center', marginTop:2 }}>
+                    <input type="color" value={f.color} onChange={e => set('color', e.target.value)}
+                      style={{ width:44, height:38, border:'1.5px solid #E2E8F0', borderRadius:8, cursor:'pointer', padding:2 }} />
+                    <span style={{ fontSize:13, color:'#64748B' }}>{f.color}</span>
+                  </div>
+                </Field>
+                <Field label="Color gradiente">
+                  <div style={{ display:'flex', gap:10, alignItems:'center', marginTop:2 }}>
+                    <input type="color" value={f.color2} onChange={e => set('color2', e.target.value)}
+                      style={{ width:44, height:38, border:'1.5px solid #E2E8F0', borderRadius:8, cursor:'pointer', padding:2 }} />
+                    <span style={{ fontSize:13, color:'#64748B' }}>{f.color2}</span>
+                  </div>
+                </Field>
+              </div>
+              {/* Preview */}
+              <div style={{ height:44, borderRadius:10, background:`linear-gradient(135deg,${f.color},${f.color2})`,
+                display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <span style={{ color:'white', fontWeight:800, fontSize:15,
+                  textShadow:'0 1px 4px rgba(0,0,0,.25)' }}>{f.emoji} {f.name || 'Nombre del parque'}</span>
+              </div>
+              <Field label="Etiquetas de accesibilidad (separadas por coma)">
+                <textarea style={{ ...inputStyle, resize:'none' }} rows={2}
+                  value={f.tags} onChange={e => set('tags', e.target.value)}
+                  placeholder="♿ Sillas de ruedas, 🅿️ Parking PMR, 🌿 Suelo caucho…"
+                  onFocus={e => e.target.style.borderColor='#0284C7'}
+                  onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+              </Field>
+              <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer',
+                fontSize:14, fontWeight:600, color:'#475569', userSelect:'none' }}>
+                <input type="checkbox" checked={f.active} onChange={e => set('active', e.target.checked)}
+                  style={{ width:17, height:17, cursor:'pointer' }} />
+                Parque activo y visible en el sitio público
+              </label>
+            </div>
+          )}
+
+          {/* ── PORTADA ── */}
+          {tab === 'cover' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+              <p style={{ fontSize:13, color:'#64748B', background:'#F0F9FF', borderRadius:10,
+                padding:'10px 14px', lineHeight:1.6 }}>
+                📸 La portada aparece en las tarjetas de la página de inicio, en el mapa y como fondo del encabezado del parque.
+              </p>
+              <ImageUploader
+                label="Foto de portada"
+                hint="Mínimo 800×450 px — se muestra en horizontal"
+                currentUrl={f.coverUrl}
+                aspect="16/9"
+                onFile={file => { set('coverFile', file); if (!file) set('coverUrl', null); }}
+              />
+            </div>
+          )}
+
+          {/* ── JUEGOS ── */}
+          {tab === 'games' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:13, color:'#64748B' }}>{f.games.length} juego(s)</span>
+                <button onClick={() => setGOpen(true)} style={{
+                  background:'linear-gradient(135deg,#0284C7,#38BDF8)', color:'white',
+                  border:'none', borderRadius:10, padding:'8px 16px',
+                  fontSize:13, fontWeight:700, cursor:'pointer',
+                }}>+ Añadir juego</button>
+              </div>
+
+              {gOpen && (
+                <div style={{ background:'#F8FAFC', borderRadius:14, padding:18,
+                  border:'1.5px solid #E2E8F0', display:'flex', flexDirection:'column', gap:12 }}>
+                  <div style={{ fontSize:15, fontWeight:800, fontFamily:'Syne,sans-serif' }}>Nuevo juego</div>
+                  <div style={{ display:'grid', gridTemplateColumns:'80px 1fr', gap:10 }}>
+                    <Field label="Emoji">
+                      <input style={inputStyle} value={gf.emoji} onChange={e => setGf(p => ({...p, emoji:e.target.value}))}
+                        onFocus={e=>e.target.style.borderColor='#0284C7'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                    </Field>
+                    <Field label="Nombre" required>
+                      <input style={inputStyle} value={gf.name} onChange={e => setGf(p => ({...p, name:e.target.value}))} placeholder="Tobogán accesible"
+                        onFocus={e=>e.target.style.borderColor='#0284C7'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                    </Field>
+                  </div>
+                  <Field label="Categoría (tag)">
+                    <input style={inputStyle} value={gf.tag} onChange={e => setGf(p => ({...p, tag:e.target.value}))} placeholder="Deslizamiento, Balanceo, Inclusivo…"
+                      onFocus={e=>e.target.style.borderColor='#0284C7'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                  </Field>
+                  <Field label="Descripción corta (tarjeta)">
+                    <input style={inputStyle} value={gf.shortDesc} onChange={e => setGf(p => ({...p, shortDesc:e.target.value}))} placeholder="Breve descripción para la tarjeta"
+                      onFocus={e=>e.target.style.borderColor='#0284C7'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                  </Field>
+                  <Field label="Descripción completa (modal)">
+                    <textarea style={{ ...inputStyle, resize:'none' }} rows={3}
+                      value={gf.fullDesc} onChange={e => setGf(p => ({...p, fullDesc:e.target.value}))} placeholder="Explicación detallada del juego…"
+                      onFocus={e=>e.target.style.borderColor='#0284C7'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                  </Field>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    <div>
+                      <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#64748B', marginBottom:5, letterSpacing:'.6px', textTransform:'uppercase' }}>Color</label>
+                      <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                        <input type="color" value={gf.color} onChange={e => setGf(p=>({...p,color:e.target.value}))}
+                          style={{ width:40,height:34,border:'1.5px solid #E2E8F0',borderRadius:8,cursor:'pointer',padding:2 }}/>
+                        <span style={{ fontSize:12, color:'#64748B' }}>{gf.color}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#64748B', marginBottom:5, letterSpacing:'.6px', textTransform:'uppercase' }}>Fondo claro</label>
+                      <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                        <input type="color" value={gf.light} onChange={e => setGf(p=>({...p,light:e.target.value}))}
+                          style={{ width:40,height:34,border:'1.5px solid #E2E8F0',borderRadius:8,cursor:'pointer',padding:2 }}/>
+                        <span style={{ fontSize:12, color:'#64748B' }}>{gf.light}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <ImageUploader label="Foto del juego" hint="Aparece en la tarjeta y en el modal"
+                    currentUrl={gf.photo} aspect="4/3"
+                    onFile={file => setGf(p => ({...p, photoFile:file, photo:file?URL.createObjectURL(file):null}))}/>
+                  <div style={{ display:'flex', gap:10 }}>
+                    <button onClick={addGame} style={{
+                      flex:1, background:'linear-gradient(135deg,#0284C7,#38BDF8)', color:'white',
+                      border:'none', borderRadius:10, padding:'11px', fontSize:14, fontWeight:700, cursor:'pointer',
+                    }}>✓ Añadir</button>
+                    <button onClick={() => setGOpen(false)} style={{
+                      flex:1, background:'#F1F5F9', color:'#475569',
+                      border:'none', borderRadius:10, padding:'11px', fontSize:14, fontWeight:700, cursor:'pointer',
+                    }}>Cancelar</button>
+                  </div>
+                </div>
+              )}
+
+              {f.games.map((g, i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', background:'white',
+                  border:'1.5px solid #F1F5F9', borderRadius:12, overflow:'hidden' }}>
+                  <div style={{ width:60, height:60, flexShrink:0, background:g.light||'#EFF6FF',
+                    display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+                    {g.photo ? <img src={g.photo} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : <span style={{ fontSize:28 }}>{g.emoji}</span>}
+                  </div>
+                  <div style={{ flex:1, padding:'10px 14px' }}>
+                    <div style={{ fontWeight:700, fontSize:14 }}>{g.name}</div>
+                    <div style={{ fontSize:11, color:'#94A3B8' }}>{g.tag} · {g.shortDesc?.slice(0,50)}</div>
+                  </div>
+                  <button onClick={() => set('games', f.games.filter((_, j) => j !== i))}
+                    style={{ background:'none', border:'none', cursor:'pointer', padding:'0 16px', color:'#DC2626', fontSize:20 }}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── PUNTOS DEL MAPA ── */}
+          {tab === 'points' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              <p style={{ fontSize:13, color:'#0369A1', background:'#F0F9FF',
+                borderRadius:10, padding:'10px 14px', lineHeight:1.6 }}>
+                📍 Añade marcadores del parque: entradas, parking, zonas de juego y descanso.
+              </p>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:13, color:'#64748B' }}>{f.mapPoints.length} punto(s)</span>
+                <button onClick={() => setPOpen(true)} style={{
+                  background:'linear-gradient(135deg,#16A34A,#22C55E)', color:'white',
+                  border:'none', borderRadius:10, padding:'8px 16px',
+                  fontSize:13, fontWeight:700, cursor:'pointer',
+                }}>+ Añadir punto</button>
+              </div>
+
+              {pOpen && (
+                <div style={{ background:'#F8FAFC', borderRadius:14, padding:18,
+                  border:'1.5px solid #E2E8F0', display:'flex', flexDirection:'column', gap:12 }}>
+                  <div style={{ fontSize:15, fontWeight:800, fontFamily:'Syne,sans-serif' }}>Nuevo punto</div>
+                  <div>
+                    <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#64748B', marginBottom:6, letterSpacing:'.6px', textTransform:'uppercase' }}>Tipo</label>
+                    <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                      {PT_OPTS.map(o => (
+                        <button key={o.v} onClick={() => setPf(p => ({ ...p, type:o.v, color:PT_COLORS[o.v] }))}
+                          style={{
+                            padding:'7px 14px', border:`1.5px solid ${pf.type===o.v?PT_COLORS[o.v]:'#E2E8F0'}`,
+                            borderRadius:20, background:pf.type===o.v?PT_COLORS[o.v]+'15':'white',
+                            fontSize:12, fontWeight:700, cursor:'pointer',
+                            color:pf.type===o.v?PT_COLORS[o.v]:'#64748B',
+                          }}>{o.l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'80px 1fr', gap:10 }}>
+                    <Field label="Emoji">
+                      <input style={inputStyle} value={pf.emoji} onChange={e => setPf(p=>({...p,emoji:e.target.value}))}
+                        onFocus={e=>e.target.style.borderColor='#0284C7'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                    </Field>
+                    <Field label="Nombre del punto" required>
+                      <input style={inputStyle} value={pf.label} onChange={e => setPf(p=>({...p,label:e.target.value}))} placeholder="Parking PMR Norte"
+                        onFocus={e=>e.target.style.borderColor='#0284C7'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                    </Field>
+                  </div>
+                  <Field label="Descripción">
+                    <input style={inputStyle} value={pf.desc} onChange={e => setPf(p=>({...p,desc:e.target.value}))} placeholder="Descripción del punto…"
+                      onFocus={e=>e.target.style.borderColor='#0284C7'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                  </Field>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    <Field label="Latitud" required>
+                      <input style={inputStyle} value={pf.lat} onChange={e => setPf(p=>({...p,lat:e.target.value}))} placeholder="40.3092"
+                        onFocus={e=>e.target.style.borderColor='#0284C7'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                    </Field>
+                    <Field label="Longitud" required>
+                      <input style={inputStyle} value={pf.lng} onChange={e => setPf(p=>({...p,lng:e.target.value}))} placeholder="-3.7139"
+                        onFocus={e=>e.target.style.borderColor='#0284C7'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                    </Field>
+                  </div>
+                  <ImageUploader label="Foto del punto (opcional)" hint="Aparece en el popup del mapa al hacer clic"
+                    currentUrl={pf.photo} aspect="16/9"
+                    onFile={file => setPf(p=>({...p,photoFile:file,photo:file?URL.createObjectURL(file):null}))}/>
+                  <div style={{ display:'flex', gap:10 }}>
+                    <button onClick={addPoint} style={{
+                      flex:1, background:'linear-gradient(135deg,#16A34A,#22C55E)', color:'white',
+                      border:'none', borderRadius:10, padding:'11px', fontSize:14, fontWeight:700, cursor:'pointer',
+                    }}>✓ Añadir</button>
+                    <button onClick={() => setPOpen(false)} style={{
+                      flex:1, background:'#F1F5F9', color:'#475569',
+                      border:'none', borderRadius:10, padding:'11px', fontSize:14, fontWeight:700, cursor:'pointer',
+                    }}>Cancelar</button>
+                  </div>
+                </div>
+              )}
+
+              {f.mapPoints.map((pt, i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', background:'white',
+                  border:`1.5px solid ${PT_COLORS[pt.type]||'#E2E8F0'}22`, borderRadius:12, overflow:'hidden' }}>
+                  <div style={{ width:60, height:60, flexShrink:0,
+                    background:(PT_COLORS[pt.type]||'#0284C7')+'14',
+                    display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+                    {pt.photo ? <img src={pt.photo} alt="" style={{ width:'100%',height:'100%',objectFit:'cover' }}/> : <span style={{ fontSize:26 }}>{pt.emoji}</span>}
+                  </div>
+                  <div style={{ flex:1, padding:'10px 14px' }}>
+                    <div style={{ fontWeight:700, fontSize:14 }}>{pt.label}</div>
+                    <div style={{ fontSize:11, color:'#94A3B8' }}>{pt.type} · {pt.lat}, {pt.lng}</div>
+                  </div>
+                  <button onClick={() => set('mapPoints', f.mapPoints.filter((_, j) => j !== i))}
+                    style={{ background:'none', border:'none', cursor:'pointer', padding:'0 16px', color:'#DC2626', fontSize:20 }}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding:'16px 24px 22px', borderTop:'1px solid #F1F5F9', display:'flex', gap:10 }}>
+          <button onClick={submit} disabled={saving} style={{
+            flex:1, padding:'13px',
+            background: saving ? '#94A3B8' : 'linear-gradient(135deg,#0284C7,#38BDF8)',
+            color:'white', border:'none', borderRadius:12,
+            fontSize:15, fontWeight:700, cursor: saving ? 'not-allowed' : 'pointer',
+            fontFamily:'Plus Jakarta Sans,sans-serif', transition:'opacity .2s',
+          }}>
+            {saving ? '⏳ Guardando…' : `✓ ${isEdit ? 'Guardar cambios' : 'Crear parque'}`}
+          </button>
+          <button onClick={onClose} disabled={saving} style={{
+            padding:'13px 20px', background:'#F1F5F9', color:'#475569',
+            border:'none', borderRadius:12, fontSize:14, fontWeight:700, cursor:'pointer',
+          }}>Cancelar</button>
+        </div>
+      </div>
+      <style>{`@keyframes popUp{from{opacity:0;transform:scale(.92) translateY(20px)}to{opacity:1;transform:none}}`}</style>
+    </div>
+  );
+}
