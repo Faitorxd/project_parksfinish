@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useState } from 'react';
 import { Navigation, MapPin, X } from 'lucide-react';
 import useInView from '../hooks/useInView';
