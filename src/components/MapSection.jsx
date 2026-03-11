@@ -203,6 +203,8 @@ export default function MapSection({ park }) {
               [park.color,  park.name],
               ['#16A34A',   'Entradas accesibles'],
               ['#D97706',   'Parking PMR'],
+              ['#8B5CF6',   'Juegos y Atracciones'],
+              ['#0EA5E9',   'Zonas de descanso'],
             ].map(([c, l]) => (
               <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#64748B', fontWeight: 600 }}>
                 <div style={{ width: 9, height: 9, borderRadius: '50%', background: c, flexShrink: 0 }} />{l}

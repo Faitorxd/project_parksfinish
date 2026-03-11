@@ -102,7 +102,6 @@ export default function Footer({ park, onHome }) {
           flexWrap: 'wrap', gap: 12, fontSize: 12, color: 'rgba(255,255,255,.28)',
         }}>
           <span>© 2025 Parques Inclusivos · Madrid</span>
-          <span>Hecho con ❤️ para la inclusión · React + Supabase + Leaflet</span>
         </div>
       </div>
       <style>{`

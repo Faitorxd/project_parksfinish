@@ -1,203 +1,188 @@
-import React, { useState } from 'react';
-import { MapPin, ChevronDown, Award, Star } from 'lucide-react';
-import useInView from '../hooks/useInView';
-
-function ParkCard({ park, delay, onClick }) {
-  const [ref, vis] = useInView();
-  const [hov, setHov] = useState(false);
-
-  return (
-    <div ref={ref} onClick={() => onClick(park)}
-      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{
-        background: hov ? park.color + '08' : 'white',
-        border: `1.5px solid ${hov ? park.color + '40' : '#F1F5F9'}`,
-        borderRadius: 22, overflow: 'hidden', cursor: 'pointer',
-        opacity: vis ? 1 : 0,
-        transform: vis ? (hov ? 'translateY(-6px)' : 'translateY(0)') : 'translateY(26px)',
-        transition: `all .45s ${delay}ms`,
-        boxShadow: hov ? `0 20px 50px ${park.color}22` : '0 4px 18px rgba(0,0,0,.06)',
-      }}>
-
-      {/* Cover */}
-      <div style={{
-        height: 200, position: 'relative', overflow: 'hidden',
-        background: `linear-gradient(140deg,${park.color},${park.color2})`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        {park.coverUrl
-          ? <img src={park.coverUrl} alt={park.name}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-                transform: hov ? 'scale(1.05)' : 'scale(1)', transition: 'transform .5s' }} />
-          : <>
-              <div style={{ position: 'absolute', inset: 0, opacity: .2,
-                backgroundImage: 'radial-gradient(rgba(255,255,255,.7) 1px,transparent 1px)',
-                backgroundSize: '18px 18px' }} />
-              <span style={{ fontSize: 76, filter: 'drop-shadow(0 6px 18px rgba(0,0,0,.2))',
-                animation: 'float 3s ease-in-out infinite' }}>{park.emoji}</span>
-            </>
-        }
-        {/* Badge */}
-        <div style={{
-          position: 'absolute', top: 12, left: 12,
-          background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(8px)',
-          borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 800,
-          color: '#92400E', border: '1px solid #FDE68A',
-        }}>{park.badge}</div>
-        {/* Rating */}
-        <div style={{
-          position: 'absolute', top: 12, right: 12,
-          background: 'rgba(0,0,0,.45)', backdropFilter: 'blur(6px)',
-          borderRadius: 20, padding: '4px 10px', fontSize: 12, fontWeight: 700,
-          color: 'white', display: 'flex', gap: 4, alignItems: 'center',
-        }}>
-          <Star size={11} fill="#F59E0B" color="#F59E0B" /> {park.rating}
-        </div>
-      </div>
-
-      {/* Body */}
-      <div style={{ padding: '18px 20px 20px' }}>
-        <h3 style={{ fontFamily: 'Syne,sans-serif', fontSize: 18, fontWeight: 800,
-          color: '#0F172A', marginBottom: 5, lineHeight: 1.2 }}>{park.name}</h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5,
-          color: '#64748B', fontSize: 13, marginBottom: 12 }}>
-          <MapPin size={12} />{park.city}
-        </div>
-        <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.65, marginBottom: 14,
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {park.description}
-        </p>
-        {/* Tags */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-          {park.tags.slice(0, 3).map((t, i) => (
-            <span key={i} style={{
-              background: park.color + '12', color: park.color,
-              border: `1px solid ${park.color}28`, borderRadius: 20,
-              padding: '3px 10px', fontSize: 11, fontWeight: 600,
-            }}>{t}</span>
-          ))}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          paddingTop: 12, borderTop: '1px solid #F8FAFC' }}>
-          <span style={{ fontSize: 12, color: '#94A3B8' }}>
-            🎢 {park.games.length} juegos &nbsp;·&nbsp; 💬 {park.reviewCount}
-          </span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: park.color }}>Ver más →</span>
-        </div>
-      </div>
-    </div>
-  );
-}
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useEffect, useRef, useState } from 'react';
+import { MapPin, Search, Navigation, Info } from 'lucide-react';
 
 export default function Hero({ parks, onParkClick }) {
-  const [hRef, hVis] = useInView();
-  const active = parks.filter(p => p.active);
+  const mapEl = useRef(null);
+  const mapObj = useRef(null);
+  const [selPark, setSelPark] = useState(null);
+  const [search, setSearch] = useState('');
+  
+  const activeParks = parks.filter(p => p.active);
+  const filteredParks = activeParks.filter(p => 
+    p.name.toLowerCase().includes(search.toLowerCase()) || 
+    p.city.toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => {
+    const L = window.L;
+    if (!L || !mapEl.current) return;
+
+    if (!mapObj.current) {
+      const centerLat = activeParks.length > 0 ? activeParks[0].lat : 28.9;
+      const centerLng = activeParks.length > 0 ? activeParks[0].lng : -13.8;
+      
+      mapObj.current = L.map(mapEl.current, { zoomControl: false }).setView([centerLat, centerLng], 12);
+      L.control.zoom({ position: 'topright' }).addTo(mapObj.current);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(mapObj.current);
+    }
+
+    // Clear existing markers
+    mapObj.current.eachLayer(layer => {
+      if (layer instanceof L.Marker) {
+        mapObj.current.removeLayer(layer);
+      }
+    });
+
+    // Add markers
+    filteredParks.forEach(park => {
+      const icon = L.divIcon({
+        html: `<div style="width:40px;height:40px;border-radius:50%;background:${park.color};border:3px solid white;box-shadow:0 3px 10px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:transform 0.2s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">${park.emoji}</div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        className: ''
+      });
+
+      L.marker([park.lat, park.lng], { icon })
+        .addTo(mapObj.current)
+        .on('click', () => {
+          setSelPark(park);
+          mapObj.current.setView([park.lat, park.lng], 16, { animate: true });
+        });
+    });
+
+  }, [filteredParks]); 
+
+  const handleParkClick = (park) => {
+    setSelPark(park);
+    if (mapObj.current && window.L) {
+      mapObj.current.setView([park.lat, park.lng], 16, { animate: true });
+    }
+  };
 
   return (
-    <section id="inicio" style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(150deg,#F0F9FF 0%,#E0F2FE 30%,#F8FAFF 65%,#FAFCFF 100%)',
-      padding: '110px 48px 80px',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      {/* BG orbs */}
-      <div style={{ position: 'absolute', top: -120, right: -120, width: 640, height: 640,
-        background: 'radial-gradient(circle,rgba(56,189,248,.14) 0%,transparent 70%)',
-        borderRadius: '50%', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: -80, left: -80, width: 440, height: 440,
-        background: 'radial-gradient(circle,rgba(14,165,233,.09) 0%,transparent 70%)',
-        borderRadius: '50%', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'radial-gradient(rgba(2,132,199,.1) 1.5px,transparent 1.5px)',
-        backgroundSize: '38px 38px', opacity: .65 }} />
-
-      <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        {/* Header */}
-        <div ref={hRef} style={{
-          textAlign: 'center', marginBottom: 64,
-          opacity: hVis ? 1 : 0, transform: hVis ? 'none' : 'translateY(28px)', transition: 'all .7s',
-        }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 7,
-            background: 'rgba(2,132,199,.1)', border: '1px solid rgba(2,132,199,.22)',
-            color: '#0284C7', padding: '6px 14px', borderRadius: 30,
-            fontSize: 11, fontWeight: 700, letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 22,
-          }}>
-            <Award size={12} /> Red de Parques Inclusivos · Madrid
-          </div>
-          <h1 style={{
-            fontFamily: 'Syne,sans-serif', fontWeight: 800,
-            fontSize: 'clamp(36px,5vw,68px)', lineHeight: 1.05,
-            letterSpacing: '-2.5px', color: '#0F172A', marginBottom: 22,
-          }}>
-            Donde todos los niños<br />
-            <span style={{
-              background: 'linear-gradient(125deg,#0284C7,#38BDF8,#0EA5E9)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>juegan juntos ✈️</span>
-          </h1>
-          <p style={{ fontSize: 17, lineHeight: 1.8, color: '#64748B', maxWidth: 540, margin: '0 auto 36px' }}>
-            Descubre nuestra red de parques infantiles{' '}
-            <strong style={{ color: '#0284C7', fontWeight: 700 }}>100% inclusivos</strong> en Madrid.
-            Diseñados para que todos los niños disfruten juntos, sin importar sus capacidades.
-          </p>
-          {/* Stats bar */}
-          <div style={{
-            display: 'inline-flex', background: 'white', borderRadius: 16,
-            border: '1px solid #E2E8F0', overflow: 'hidden',
-            boxShadow: '0 4px 20px rgba(0,0,0,.06)',
-          }}>
-            {[
-              { emoji: '🏞️', value: active.length, label: 'Parques'    },
-              { emoji: '🎢', value: '50+',          label: 'Juegos'     },
-              { emoji: '♿', value: '100%',          label: 'Accesibles' },
-              { emoji: '⭐', value: '4.9',           label: 'Valoración' },
-            ].map((s, i) => (
-              <div key={i} style={{
-                padding: '14px 24px', textAlign: 'center',
-                borderRight: i < 3 ? '1px solid #F1F5F9' : 'none',
-              }}>
-                <div style={{ fontSize: 20, marginBottom: 3 }}>{s.emoji}</div>
-                <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 18, fontWeight: 800, color: '#0F172A' }}>{s.value}</div>
-                <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600, marginTop: 1 }}>{s.label}</div>
-              </div>
-            ))}
+    <div className="hero-container" style={{ display: 'flex', height: '100vh', width: '100vw', paddingTop: 64, overflow: 'hidden', background: '#F8FAFC' }}>
+      
+      {/* Sidebar Panel */}
+      <div className="hero-sidebar" style={{ width: 440, height: '100%', background: 'white', display: 'flex', flexDirection: 'column', zIndex: 10, boxShadow: '4px 0 24px rgba(0,0,0,0.06)' }}>
+        <div style={{ padding: '24px 24px 16px', borderBottom: '1px solid #F1F5F9' }}>
+          <h1 style={{ fontFamily: 'Syne,sans-serif', fontSize: 26, fontWeight: 800, color: '#0F172A', marginBottom: 16 }}>Descubre Parques</h1>
+          
+          <div style={{ position: 'relative' }}>
+            <Search size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+            <input 
+              type="text" 
+              placeholder="Buscar parque o municipio..." 
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ width: '100%', padding: '14px 14px 14px 42px', borderRadius: 12, border: '1px solid #E2E8F0', background: '#F8FAFC', fontSize: 15, outline: 'none', transition: 'border-color 0.2s', fontFamily: 'inherit', boxSizing: 'border-box' }}
+            />
           </div>
         </div>
 
-        {/* Parks grid */}
-        {active.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <div style={{ fontSize: 52, marginBottom: 16 }}>🏗️</div>
-            <p style={{ fontSize: 16, color: '#94A3B8' }}>Próximamente se añadirán parques. ¡Vuelve pronto!</p>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 24 }}>
-            {active.map((park, i) => (
-              <ParkCard key={park.id} park={park} delay={i * 80} onClick={onParkClick} />
-            ))}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 16, boxSizing: 'border-box' }}>
+          {filteredParks.length > 0 ? filteredParks.map(park => (
+            <div 
+              key={park.id}
+              onClick={() => handleParkClick(park)}
+              style={{ padding: 16, borderRadius: 16, cursor: 'pointer', marginBottom: 10, border: `2px solid ${selPark?.id === park.id ? park.color : '#F1F5F9'}`, background: selPark?.id === park.id ? `${park.color}0A` : 'white', transition: 'border 0.2s, box-shadow 0.2s', boxShadow: selPark?.id === park.id ? `0 4px 12px ${park.color}20` : '0 2px 8px rgba(0,0,0,0.02)' }}
+            >
+              <div style={{ display: 'flex', gap: 16 }}>
+                <div style={{ width: 64, height: 64, borderRadius: 14, background: park.coverUrl ? 'none' : `linear-gradient(135deg,${park.color},${park.color2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, flexShrink: 0, overflow: 'hidden' }}>
+                  {park.coverUrl ? (
+                    <img src={park.coverUrl} alt={park.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    park.emoji
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ fontFamily: 'Syne,sans-serif', fontSize: 17, fontWeight: 800, color: '#0F172A', marginBottom: 6 }}>{park.name}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748B', fontSize: 13, marginBottom: 8, fontWeight: 600 }}>
+                    <MapPin size={13} color={park.color} /> {park.city}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 13, color: '#64748B', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ color: '#F59E0B' }}>⭐</span> {park.rating} ({park.reviewCount})
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: park.color, background: `${park.color}15`, padding: '4px 8px', borderRadius: 12 }}>
+                      {park.games?.length || 0} juegos
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )) : (
+            <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8' }}>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>🔍</div>
+              No se encontraron parques.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Map Container */}
+      <div className="hero-map" style={{ flex: 1, position: 'relative' }}>
+        <div ref={mapEl} style={{ width: '100%', height: '100%', zIndex: 1 }} />
+        
+        {/* Selected Park Overlay inside map area */}
+        {selPark && (
+          <div className="hero-popup" style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', zIndex: 400, display: 'flex', justifyContent: 'center', pointerEvents: 'none', width: '90%', maxWidth: 560 }}>
+            <div className="hero-popup-content" style={{ background: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(12px)', borderRadius: 24, padding: 24, display: 'flex', alignItems: 'center', gap: 24, boxShadow: '0 20px 50px rgba(0,0,0,0.15)', pointerEvents: 'auto', width: '100%', border: `1.5px solid ${selPark.color}30` }}>
+              <div className="hero-popup-img" style={{ width: 110, height: 110, borderRadius: 18, background: selPark.coverUrl ? 'none' : `linear-gradient(135deg,${selPark.color},${selPark.color2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, flexShrink: 0, overflow: 'hidden', boxShadow: `0 8px 24px ${selPark.color}40` }}>
+                {selPark.coverUrl ? (
+                  <img src={selPark.coverUrl} alt={selPark.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  selPark.emoji
+                )}
+              </div>
+              
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <div style={{ background: `${selPark.color}15`, color: selPark.color, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 800 }}>{selPark.badge}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 800, color: '#F59E0B' }}>⭐ {selPark.rating}</div>
+                </div>
+                <h3 style={{ fontFamily: 'Syne,sans-serif', fontSize: 24, fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>{selPark.name}</h3>
+                <p style={{ fontSize: 14, color: '#64748B', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 16, lineHeight: 1.5 }}>{selPark.description}</p>
+                
+                <div className="hero-popup-actions" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <button 
+                    onClick={() => onParkClick(selPark)}
+                    style={{ background: `linear-gradient(135deg,${selPark.color},${selPark.color2})`, color: 'white', border: 'none', borderRadius: 12, padding: '12px 24px', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'transform 0.2s', boxShadow: `0 6px 16px ${selPark.color}40` }}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+                  >
+                    <Info size={16} /> Ver parque
+                  </button>
+                  <a href={selPark.mapsUrl} target="_blank" rel="noreferrer" style={{ background: '#F1F5F9', color: '#0F172A', border: 'none', borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#E2E8F0'} onMouseLeave={e => e.currentTarget.style.background = '#F1F5F9'}>
+                    <Navigation size={16} /> Ruta
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Scroll cue */}
-      {active.length > 0 && (
-        <div style={{
-          position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-          color: '#94A3B8', fontSize: 10, fontWeight: 700, letterSpacing: '.8px',
-          animation: 'fadeUp 1s 1.2s both',
-        }}>
-          EXPLORAR
-          <ChevronDown size={18} style={{ animation: 'bounce 1.4s ease-in-out infinite' }} />
-        </div>
-      )}
-
       <style>{`
-        @keyframes float  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-        @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)}   }
-        @media(max-width:640px){ #inicio{ padding:90px 20px 60px !important } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+        @media(max-width: 900px) {
+          .hero-container { flex-direction: column-reverse !important;  }
+          .hero-sidebar { width: 100% !important; height: 50% !important; border-top: 1px solid #E2E8F0; }
+          .hero-map { height: 50% !important; }
+          .hero-popup { bottom: 20px !important; width: calc(100% - 40px) !important; left: 20px !important; transform: none !important; }
+          .hero-popup-content { flex-direction: column !important; text-align: center !important; gap: 16px !important; padding: 20px !important; }
+          .hero-popup-content > div:nth-child(2) { text-align: center !important; }
+          .hero-popup-img { margin: 0 auto; width: 80px !important; height: 80px !important; font-size: 36px !important; }
+          .hero-popup-actions { justify-content: center; }
+          .hero-popup-content .lucide { margin: auto; }
+        }
       `}</style>
-    </section>
+    </div>
   );
 }

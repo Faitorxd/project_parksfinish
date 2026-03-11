@@ -34,10 +34,10 @@ export default function Navbar({ park, onHome, onAdmin }) {
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: scrolled ? '10px 48px' : '18px 48px',
-        background: scrolled ? 'rgba(255,255,255,.94)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(20px)' : 'none',
-        borderBottom: scrolled ? '1px solid #E2E8F0' : 'none',
-        boxShadow: scrolled ? '0 2px 16px rgba(0,0,0,.06)' : 'none',
+        background: (scrolled || !park) ? 'rgba(255,255,255,.94)' : 'transparent',
+        backdropFilter: (scrolled || !park) ? 'blur(20px)' : 'none',
+        borderBottom: (scrolled || !park) ? '1px solid #E2E8F0' : 'none',
+        boxShadow: (scrolled || !park) ? '0 2px 16px rgba(0,0,0,.06)' : 'none',
         transition: 'all .35s ease',
       }}>
         {/* Logo */}

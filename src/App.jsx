@@ -101,7 +101,6 @@ export default function App() {
       ) : (
         <>
           <Hero parks={parks} onParkClick={goPark} />
-          <Footer park={null} onHome={goHome} />
         </>
       )}
     </div>
