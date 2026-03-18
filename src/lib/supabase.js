@@ -28,6 +28,8 @@ const del = paths => paths.length &&
   supabase.storage.from(BUCKET).remove(paths);
 
 const coverPath = id    => `covers/${id}`;
+const photo2Path = id   => `photos2/${id}`;
+const photo3Path = id   => `photos3/${id}`;
 const gamePath  = (id,i)=> `games/${id}_${i}`;
 const pointPath = (id,i)=> `points/${id}_${i}`;
 
@@ -54,15 +56,20 @@ export async function fetchPark(id) {
 
 /* ─── PARKS — write ─────────────────────────────────────────── */
 export async function createPark(park) {
-  const { games = [], mapPoints = [], coverFile, ...rest } = park;
+  const { games = [], mapPoints = [], coverFile, photo2File, photo3File, ...rest } = park;
   const { data: np, error } = await supabase
     .from('parks').insert([toRow(rest)]).select().single();
   if (error) throw error;
   const pid = np.id;
 
-  if (coverFile) {
-    const url = await uploadImage(coverFile, coverPath(pid));
-    await supabase.from('parks').update({ cover_url: url }).eq('id', pid);
+  if (coverFile || photo2File || photo3File) {
+    const updates = {};
+    if (coverFile) updates.cover_url = await uploadImage(coverFile, coverPath(pid));
+    if (photo2File) updates.photo_2_url = await uploadImage(photo2File, photo2Path(pid));
+    if (photo3File) updates.photo_3_url = await uploadImage(photo3File, photo3Path(pid));
+    if (Object.keys(updates).length > 0) {
+      await supabase.from('parks').update(updates).eq('id', pid);
+    }
   }
   if (games.length) {
     const rows = [];
@@ -97,9 +104,11 @@ export async function createPark(park) {
 }
 
 export async function updatePark(id, park) {
-  const { games, mapPoints, coverFile, ...rest } = park;
+  const { games, mapPoints, coverFile, photo2File, photo3File, ...rest } = park;
   const upd = toRow(rest);
   if (coverFile) upd.cover_url = await uploadImage(coverFile, coverPath(id));
+  if (photo2File) upd.photo_2_url = await uploadImage(photo2File, photo2Path(id));
+  if (photo3File) upd.photo_3_url = await uploadImage(photo3File, photo3Path(id));
   const { error } = await supabase.from('parks').update(upd).eq('id', id);
   if (error) throw error;
 
@@ -155,6 +164,8 @@ export async function deletePark(id) {
   const { data: p } = await supabase.from('map_points').select('id').eq('park_id', id);
   del([
     coverPath(id),
+    photo2Path(id),
+    photo3Path(id),
     ...(g  || []).map((_, i) => gamePath(id, i)),
     ...(p  || []).map((_, i) => pointPath(id, i)),
   ]);
@@ -187,6 +198,11 @@ function norm(p) {
     reviewCount: p.review_count || 0,
     active:      p.active,
     coverUrl:    p.cover_url || null,
+    youtubeUrl:  p.youtube_url || '',
+    photo2Url:   p.photo_2_url || null,
+    photo3Url:   p.photo_3_url || null,
+    schedule:    p.schedule?.info || '',
+    isInclusive: p.is_inclusive || false,
     mapsUrl:     `https://maps.google.com?q=${encodeURIComponent(`${p.address} ${p.city}`)}`,
     games: (p.games || [])
       .sort((a, b) => a.sort_order - b.sort_order)
@@ -234,6 +250,9 @@ function toRow(p) {
       ? p.tags
       : (p.tags || '').split(',').map(t => t.trim()).filter(Boolean),
     active: p.active !== false,
+    youtube_url: p.youtubeUrl || null,
+    is_inclusive: !!p.isInclusive,
+    schedule: { info: p.schedule || '' },
   };
 }
 

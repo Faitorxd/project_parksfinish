@@ -46,21 +46,21 @@ export default function Navbar({ park, onHome, onAdmin }) {
           background: 'none', border: 'none', cursor: 'pointer', padding: 0,
         }}>
           <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: `linear-gradient(135deg,${accentColor},${accentColor2})`,
+            width: 36, height: 36, borderRadius: park ? 10 : 0,
+            background: park ? `linear-gradient(135deg,${accentColor},${accentColor2})` : 'transparent',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 4px 10px ${accentColor}44`,
+            boxShadow: park ? `0 4px 10px ${accentColor}44` : 'none',
             fontSize: park ? 18 : 0,
           }}>
             {park
               ? <span>{park.emoji}</span>
-              : <TreePine size={18} color="white" strokeWidth={2.5} />}
+              : <img src="/image(1).png" alt="Logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />}
           </div>
           <span style={{
             fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 16,
-            color: '#0F172A', letterSpacing: '-.3px',
+            color: park ? '#0F172A' : '#115E59', letterSpacing: '-.3px',
           }}>
-            {park ? park.name : 'Parques Inclusivos'}
+            {park ? park.name : 'PLayYaiza'}
           </span>
         </button>
 

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MapPin, ChevronDown, Award } from 'lucide-react';
 
 export default function ParkHero({ park }) {
+  const [expandedImg, setExpandedImg] = useState(null);
   const go = id => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   const hasCover = !!park.coverUrl;
 
@@ -116,7 +117,7 @@ export default function ParkHero({ park }) {
             {[
               { emoji: '🥇', value: park.badge.split(' ')[0], label: 'Premio'     },
               { emoji: '🎢', value: park.games.length,        label: 'Juegos'     },
-              { emoji: '♿', value: '100%',                   label: 'Inclusivo'  },
+              { emoji: '♿', value: park.isInclusive ? '100%' : 'No', label: 'Inclusivo'  },
               { emoji: '⭐', value: park.rating,              label: 'Valoración' },
             ].map((s, i) => (
               <div key={i} style={{
@@ -134,7 +135,7 @@ export default function ParkHero({ park }) {
         </div>
 
         {/* ── RIGHT VISUAL ── */}
-        <div style={{ display: 'flex', justifyContent: 'center', animation: 'fadeUp .8s .3s both' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeUp .8s .3s both', gap: 20 }}>
           <div style={{ position: 'relative', maxWidth: 400, width: '100%' }}>
             <div style={{
               background: hasCover ? 'rgba(255,255,255,.08)' : 'white', borderRadius: 28,
@@ -171,7 +172,7 @@ export default function ParkHero({ park }) {
                   <MapPin size={13} /> {park.address}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-                  {[['🎢', park.games.length, 'Juegos'], ['♿', '100%', 'Accesible'], ['⭐', park.rating, 'Rating']].map(([e, v, l]) => (
+                  {[['🎢', park.games.length, 'Juegos'], ['♿', park.isInclusive ? '100%' : 'No', 'Accesible'], ['⭐', park.rating, 'Rating']].map(([e, v, l]) => (
                     <div key={l} style={{
                       background: hasCover ? 'rgba(255,255,255,.08)' : '#F8FAFC',
                       borderRadius: 12, padding: '10px 6px', textAlign: 'center',
@@ -187,27 +188,41 @@ export default function ParkHero({ park }) {
               </div>
             </div>
             {/* Floating chips */}
-            <div style={{ position: 'absolute', top: -16, right: -22,
-              background: 'white', border: '1.5px solid #BBF7D0', borderRadius: 14,
-              padding: '10px 14px', boxShadow: '0 4px 20px rgba(0,0,0,.1)',
-              display: 'flex', alignItems: 'center', gap: 9, animation: 'fadeUp .6s .6s both' }}>
-              <span style={{ fontSize: 22 }}>♿</span>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#15803D' }}>100% Accesible</div>
-                <div style={{ fontSize: 10, color: '#94A3B8' }}>Todas las capacidades</div>
+            {park.isInclusive && (
+              <div style={{ position: 'absolute', top: -16, right: -22,
+                background: 'white', border: '1.5px solid #BBF7D0', borderRadius: 14,
+                padding: '10px 14px', boxShadow: '0 4px 20px rgba(0,0,0,.1)',
+                display: 'flex', alignItems: 'center', gap: 9, animation: 'fadeUp .6s .6s both' }}>
+                <span style={{ fontSize: 22 }}>♿</span>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#15803D' }}>100% Accesible</div>
+                  <div style={{ fontSize: 10, color: '#94A3B8' }}>Todas las capacidades</div>
+                </div>
               </div>
-            </div>
-            <div style={{ position: 'absolute', bottom: 50, left: -24,
-              background: 'white', border: '1.5px solid #BAE6FD', borderRadius: 14,
-              padding: '10px 14px', boxShadow: '0 4px 20px rgba(0,0,0,.1)',
-              display: 'flex', alignItems: 'center', gap: 9, animation: 'fadeUp .6s .8s both' }}>
-              <span style={{ fontSize: 22 }}>🗺️</span>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#0284C7' }}>Mapa interactivo</div>
-                <div style={{ fontSize: 10, color: '#94A3B8' }}>OpenStreetMap</div>
-              </div>
-            </div>
+            )}
           </div>
+
+          {/* Fotos adicionales (debajo de la info) */}
+          {(park.photo2Url || park.photo3Url) && (
+            <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: 400 }}>
+              {park.photo2Url && (
+                <div 
+                  onClick={() => setExpandedImg(park.photo2Url)}
+                  style={{ flex: 1, height: 86, borderRadius: 16, overflow: 'hidden', cursor: 'zoom-in', border: `1.5px solid ${hasCover ? 'rgba(255,255,255,.2)' : park.color + '20'}`, boxShadow: '0 8px 24px rgba(0,0,0,.08)' }}
+                >
+                  <img src={park.photo2Url} alt="Foto extra 2" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform .3s' }} onMouseEnter={e => e.currentTarget.style.transform='scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform='scale(1)'} />
+                </div>
+              )}
+              {park.photo3Url && (
+                <div 
+                  onClick={() => setExpandedImg(park.photo3Url)}
+                  style={{ flex: 1, height: 86, borderRadius: 16, overflow: 'hidden', cursor: 'zoom-in', border: `1.5px solid ${hasCover ? 'rgba(255,255,255,.2)' : park.color + '20'}`, boxShadow: '0 8px 24px rgba(0,0,0,.08)' }}
+                >
+                  <img src={park.photo3Url} alt="Foto extra 3" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform .3s' }} onMouseEnter={e => e.currentTarget.style.transform='scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform='scale(1)'} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -224,9 +239,32 @@ export default function ParkHero({ park }) {
         <ChevronDown size={18} style={{ animation: 'bounce 1.4s ease-in-out infinite' }} />
       </button>
 
+      {/* Lightbox */}
+      {expandedImg && (
+        <div 
+          onClick={() => setExpandedImg(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(15,23,42,.92)', backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 40, cursor: 'zoom-out',
+            animation: 'fadeIn .2s ease-out'
+          }}
+        >
+          <img src={expandedImg} alt="Ampliada" style={{
+            maxWidth: '100%', maxHeight: '100%', borderRadius: 20,
+            boxShadow: '0 24px 80px rgba(0,0,0,.6)',
+            animation: 'zoomIn .2s ease-out'
+          }} />
+          <div style={{ position: 'absolute', top: 24, right: 32, color: 'rgba(255,255,255,.6)', fontSize: 48, fontWeight: 300 }}>&times;</div>
+        </div>
+      )}
+
       <style>{`
         @keyframes floatEmoji { 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-12px) rotate(-3deg)} }
         @keyframes bounce     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)} }
+        @keyframes fadeIn     { from{opacity:0} to{opacity:1} }
+        @keyframes zoomIn     { from{transform:scale(.95)} to{transform:scale(1)} }
         @media(max-width:900px){
           .hero-grid{ grid-template-columns:1fr !important; gap:40px !important }
           .hero-grid>div:last-child{ display:none !important }

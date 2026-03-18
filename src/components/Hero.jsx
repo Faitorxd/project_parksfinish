@@ -7,12 +7,15 @@ export default function Hero({ parks, onParkClick }) {
   const mapObj = useRef(null);
   const [selPark, setSelPark] = useState(null);
   const [search, setSearch] = useState('');
+  const [onlyInclusive, setOnlyInclusive] = useState(false);
   
   const activeParks = parks.filter(p => p.active);
-  const filteredParks = activeParks.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
-    p.city.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredParks = activeParks.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
+                          p.city.toLowerCase().includes(search.toLowerCase());
+    const matchesInclusive = onlyInclusive ? p.isInclusive : true;
+    return matchesSearch && matchesInclusive;
+  });
 
   useEffect(() => {
     const L = window.L;
@@ -71,7 +74,7 @@ export default function Hero({ parks, onParkClick }) {
         <div style={{ padding: '24px 24px 16px', borderBottom: '1px solid #F1F5F9' }}>
           <h1 style={{ fontFamily: 'Syne,sans-serif', fontSize: 26, fontWeight: 800, color: '#0F172A', marginBottom: 16 }}>Descubre Parques</h1>
           
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', marginBottom: 12 }}>
             <Search size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
             <input 
               type="text" 
@@ -81,6 +84,16 @@ export default function Hero({ parks, onParkClick }) {
               style={{ width: '100%', padding: '14px 14px 14px 42px', borderRadius: 12, border: '1px solid #E2E8F0', background: '#F8FAFC', fontSize: 15, outline: 'none', transition: 'border-color 0.2s', fontFamily: 'inherit', boxSizing: 'border-box' }}
             />
           </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#475569', userSelect: 'none' }}>
+            <input 
+              type="checkbox" 
+              checked={onlyInclusive}
+              onChange={e => setOnlyInclusive(e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#0284C7' }} 
+            />
+            ♿ Solo parques inclusivos
+          </label>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: 16, boxSizing: 'border-box' }}>

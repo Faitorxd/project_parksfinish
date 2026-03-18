@@ -5,11 +5,14 @@ import Navbar        from './components/Navbar';
 import Hero          from './components/Hero';
 import ParkHero      from './components/ParkHero';
 import ParkInfo      from './components/ParkInfo';
+import ParkVideo     from './components/ParkVideo';
 import Games         from './components/Games';
 import MapSection    from './components/MapSection';
 import Accessibility from './components/Accessibility';
 import Reviews       from './components/Reviews';
+import FloatingPdfButton from './components/FloatingPdfButton';
 import Footer        from './components/Footer';
+import Landing       from './components/Landing';
 import AdminLogin    from './pages/AdminLogin';
 import AdminPanel    from './pages/AdminPanel';
 
@@ -17,7 +20,7 @@ export default function App() {
   const [parks,    setParks]    = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [session,  setSession]  = useState(null);
-  const [view,     setView]     = useState('home');   // 'home' | 'park' | 'login' | 'admin'
+  const [view,     setView]     = useState('landing');   // 'landing' | 'home' | 'park' | 'login' | 'admin'
   const [selPark,  setSelPark]  = useState(null);
 
   /* ── Auth listener ── */
@@ -28,7 +31,7 @@ export default function App() {
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, s) => {
       setSession(s);
-      if (!s && view === 'admin') goHome();
+      if (!s && view === 'admin') goLanding();
     });
     return () => subscription.unsubscribe();
   }, []);                                   // eslint-disable-line
@@ -47,11 +50,12 @@ export default function App() {
   useEffect(() => { window.scrollTo(0, 0); }, [view, selPark?.id]);
 
   /* ── Navigation helpers ── */
+  const goLanding   = () => { setView('landing'); setSelPark(null); };
   const goHome      = () => { setView('home');  setSelPark(null); };
   const goPark      = p  => { setSelPark(p);    setView('park');  };
   const goLogin     = () => setView('login');
   const goAdmin     = () => setView('admin');
-  const onLogout    = () => { setSession(null); goHome(); };
+  const onLogout    = () => { setSession(null); goLanding(); };
   const onRefresh   = () => load(view === 'admin');
   const onReviewAdded = async () => {
     const updated = await fetchParks({ admin: false });
@@ -72,22 +76,29 @@ export default function App() {
   if (view === 'park' && selPark) {
     return (
       <div>
-        <Navbar park={selPark} onHome={goHome} onAdmin={session ? goAdmin : goLogin} />
+        <Navbar park={selPark} onHome={goLanding} onAdmin={session ? goAdmin : goLogin} />
         <ParkHero park={selPark} />
         <ParkInfo park={selPark} />
+        <ParkVideo park={selPark} />
         <Games    park={selPark} />
         <MapSection park={selPark} />
         <Accessibility park={selPark} />
         <Reviews   park={selPark} onReviewAdded={onReviewAdded} />
+        <FloatingPdfButton parkColor={selPark.color} />
         <Footer    park={selPark} onHome={goHome} />
       </div>
     );
   }
 
+  /* ── Landing ── */
+  if (view === 'landing') {
+    return <Landing onStart={goHome} />;
+  }
+
   /* ── Home ── */
   return (
     <div>
-      <Navbar park={null} onHome={goHome} onAdmin={session ? goAdmin : goLogin} />
+      <Navbar park={null} onHome={goLanding} onAdmin={session ? goAdmin : goLogin} />
       {loading ? (
         <div style={{
           minHeight:'100vh', display:'flex', flexDirection:'column',
@@ -101,6 +112,7 @@ export default function App() {
       ) : (
         <>
           <Hero parks={parks} onParkClick={goPark} />
+          <FloatingPdfButton parkColor="#0284C7" />
         </>
       )}
     </div>

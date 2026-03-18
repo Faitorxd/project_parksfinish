@@ -4,7 +4,7 @@ import ImageUploader from './ImageUploader';
 
 const TABS = [
   { id: 'basic',  label: '📋 Datos'         },
-  { id: 'cover',  label: '📸 Portada'        },
+  { id: 'cover',  label: '📸 Fotos'         },
   { id: 'games',  label: '🎮 Juegos'         },
   { id: 'points', label: '📍 Mapa'           },
 ];
@@ -54,8 +54,15 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
     color2:      park?.color2      || '#38BDF8',
     tags:        Array.isArray(park?.tags) ? park.tags.join(', ') : (park?.tags || ''),
     active:      park?.active !== false,
+    youtubeUrl:  park?.youtubeUrl  || '',
+    schedule:    park?.schedule    || '',
+    isInclusive: park?.isInclusive || false,
     coverUrl:    park?.coverUrl    || null,
     coverFile:   null,
+    photo2Url:   park?.photo2Url   || null,
+    photo2File:  null,
+    photo3Url:   park?.photo3Url   || null,
+    photo3File:  null,
     games:       (park?.games     || []).map(g => ({ ...g, photoFile: null })),
     mapPoints:   (park?.mapPoints || []).map(m => ({ ...m, photoFile: null })),
   });
@@ -64,23 +71,61 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
 
   /* ── Game sub-form ── */
   const [gOpen, setGOpen] = useState(false);
+  const [gEditIdx, setGEditIdx] = useState(null);
   const [gf, setGf] = useState({ emoji:'🎮', name:'', tag:'', shortDesc:'', fullDesc:'',
     color:'#0284C7', light:'#EFF6FF', photo:null, photoFile:null });
+
+  const openNewGame = () => {
+    setGf({ emoji:'🎮', name:'', tag:'', shortDesc:'', fullDesc:'', color:'#0284C7', light:'#EFF6FF', photo:null, photoFile:null });
+    setGEditIdx(null);
+    setGOpen(true);
+  };
+
+  const openEditGame = (idx) => {
+    setGf(f.games[idx]);
+    setGEditIdx(idx);
+    setGOpen(true);
+  };
+
   const addGame = () => {
     if (!gf.name.trim()) return;
-    set('games', [...f.games, { ...gf, id: 'g' + Date.now() }]);
-    setGf({ emoji:'🎮', name:'', tag:'', shortDesc:'', fullDesc:'', color:'#0284C7', light:'#EFF6FF', photo:null, photoFile:null });
+    if (gEditIdx !== null) {
+      const newGames = [...f.games];
+      newGames[gEditIdx] = gf;
+      set('games', newGames);
+    } else {
+      set('games', [...f.games, { ...gf, id: gf.id || ('g' + Date.now()) }]);
+    }
     setGOpen(false);
   };
 
   /* ── Point sub-form ── */
   const [pOpen, setPOpen] = useState(false);
+  const [pEditIdx, setPEditIdx] = useState(null);
   const [pf, setPf] = useState({ type:'games', emoji:'🎮', label:'', desc:'', lat:'', lng:'',
     color:'#0284C7', photo:null, photoFile:null });
+
+  const openNewPoint = () => {
+    setPf({ type:'games', emoji:'🎮', label:'', desc:'', lat:'', lng:'', color:'#0284C7', photo:null, photoFile:null });
+    setPEditIdx(null);
+    setPOpen(true);
+  };
+
+  const openEditPoint = (idx) => {
+    setPf(f.mapPoints[idx]);
+    setPEditIdx(idx);
+    setPOpen(true);
+  };
+
   const addPoint = () => {
     if (!pf.label.trim() || !pf.lat || !pf.lng) return;
-    set('mapPoints', [...f.mapPoints, { ...pf, id: 'mp' + Date.now() }]);
-    setPf({ type:'games', emoji:'🎮', label:'', desc:'', lat:'', lng:'', color:'#0284C7', photo:null, photoFile:null });
+    if (pEditIdx !== null) {
+      const newPts = [...f.mapPoints];
+      newPts[pEditIdx] = pf;
+      set('mapPoints', newPts);
+    } else {
+      set('mapPoints', [...f.mapPoints, { ...pf, id: pf.id || ('mp' + Date.now()) }]);
+    }
     setPOpen(false);
   };
 
@@ -214,6 +259,20 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
                 <span style={{ color:'white', fontWeight:800, fontSize:15,
                   textShadow:'0 1px 4px rgba(0,0,0,.25)' }}>{f.emoji} {f.name || 'Nombre del parque'}</span>
               </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <Field label="Horario">
+                  <input style={inputStyle} value={f.schedule} onChange={e => set('schedule', e.target.value)}
+                    placeholder="L-D: 09:00 - 22:00"
+                    onFocus={e => e.target.style.borderColor='#0284C7'}
+                    onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+                </Field>
+                <Field label="Video YouTube (URL)">
+                  <input style={inputStyle} value={f.youtubeUrl} onChange={e => set('youtubeUrl', e.target.value)}
+                    placeholder="https://youtube.com/watch?v=..."
+                    onFocus={e => e.target.style.borderColor='#0284C7'}
+                    onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+                </Field>
+              </div>
               <Field label="Etiquetas de accesibilidad (separadas por coma)">
                 <textarea style={{ ...inputStyle, resize:'none' }} rows={2}
                   value={f.tags} onChange={e => set('tags', e.target.value)}
@@ -221,29 +280,53 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
                   onFocus={e => e.target.style.borderColor='#0284C7'}
                   onBlur={e => e.target.style.borderColor='#E2E8F0'} />
               </Field>
-              <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer',
-                fontSize:14, fontWeight:600, color:'#475569', userSelect:'none' }}>
-                <input type="checkbox" checked={f.active} onChange={e => set('active', e.target.checked)}
-                  style={{ width:17, height:17, cursor:'pointer' }} />
-                Parque activo y visible en el sitio público
-              </label>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer',
+                  fontSize:14, fontWeight:600, color:'#475569', userSelect:'none' }}>
+                  <input type="checkbox" checked={f.isInclusive} onChange={e => set('isInclusive', e.target.checked)}
+                    style={{ width:17, height:17, cursor:'pointer', accentColor:'#0284C7' }} />
+                  ♿ Parque inclusivo
+                </label>
+                <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer',
+                  fontSize:14, fontWeight:600, color:'#475569', userSelect:'none' }}>
+                  <input type="checkbox" checked={f.active} onChange={e => set('active', e.target.checked)}
+                    style={{ width:17, height:17, cursor:'pointer', accentColor:'#0284C7' }} />
+                  Visible al público
+                </label>
+              </div>
             </div>
           )}
 
-          {/* ── PORTADA ── */}
+          {/* ── FOTOS ── */}
           {tab === 'cover' && (
             <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
               <p style={{ fontSize:13, color:'#64748B', background:'#F0F9FF', borderRadius:10,
                 padding:'10px 14px', lineHeight:1.6 }}>
-                📸 La portada aparece en las tarjetas de la página de inicio, en el mapa y como fondo del encabezado del parque.
+                📸 La portada aparece en las tarjetas y fondo del encabezado. Las fotos adicionales complementan el parque.
               </p>
               <ImageUploader
-                label="Foto de portada"
+                label="Foto de portada principal"
                 hint="Mínimo 800×450 px — se muestra en horizontal"
                 currentUrl={f.coverUrl}
                 aspect="16/9"
                 onFile={file => { set('coverFile', file); if (!file) set('coverUrl', null); }}
               />
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+                <ImageUploader
+                  label="Foto adicional 2"
+                  hint="Opcional. Aspecto 16:9"
+                  currentUrl={f.photo2Url}
+                  aspect="16/9"
+                  onFile={file => { set('photo2File', file); if (!file) set('photo2Url', null); }}
+                />
+                <ImageUploader
+                  label="Foto adicional 3"
+                  hint="Opcional. Aspecto 16:9"
+                  currentUrl={f.photo3Url}
+                  aspect="16/9"
+                  onFile={file => { set('photo3File', file); if (!file) set('photo3Url', null); }}
+                />
+              </div>
             </div>
           )}
 
@@ -252,7 +335,7 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                 <span style={{ fontSize:13, color:'#64748B' }}>{f.games.length} juego(s)</span>
-                <button onClick={() => setGOpen(true)} style={{
+                <button onClick={openNewGame} style={{
                   background:'linear-gradient(135deg,#0284C7,#38BDF8)', color:'white',
                   border:'none', borderRadius:10, padding:'8px 16px',
                   fontSize:13, fontWeight:700, cursor:'pointer',
@@ -262,7 +345,9 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
               {gOpen && (
                 <div style={{ background:'#F8FAFC', borderRadius:14, padding:18,
                   border:'1.5px solid #E2E8F0', display:'flex', flexDirection:'column', gap:12 }}>
-                  <div style={{ fontSize:15, fontWeight:800, fontFamily:'Syne,sans-serif' }}>Nuevo juego</div>
+                  <div style={{ fontSize:15, fontWeight:800, fontFamily:'Syne,sans-serif' }}>
+                    {gEditIdx !== null ? 'Editar juego' : 'Nuevo juego'}
+                  </div>
                   <div style={{ display:'grid', gridTemplateColumns:'80px 1fr', gap:10 }}>
                     <Field label="Emoji">
                       <input style={inputStyle} value={gf.emoji} onChange={e => setGf(p => ({...p, emoji:e.target.value}))}
@@ -311,7 +396,7 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
                     <button onClick={addGame} style={{
                       flex:1, background:'linear-gradient(135deg,#0284C7,#38BDF8)', color:'white',
                       border:'none', borderRadius:10, padding:'11px', fontSize:14, fontWeight:700, cursor:'pointer',
-                    }}>✓ Añadir</button>
+                    }}>✓ {gEditIdx !== null ? 'Guardar' : 'Añadir'}</button>
                     <button onClick={() => setGOpen(false)} style={{
                       flex:1, background:'#F1F5F9', color:'#475569',
                       border:'none', borderRadius:10, padding:'11px', fontSize:14, fontWeight:700, cursor:'pointer',
@@ -331,8 +416,12 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
                     <div style={{ fontWeight:700, fontSize:14 }}>{g.name}</div>
                     <div style={{ fontSize:11, color:'#94A3B8' }}>{g.tag} · {g.shortDesc?.slice(0,50)}</div>
                   </div>
-                  <button onClick={() => set('games', f.games.filter((_, j) => j !== i))}
-                    style={{ background:'none', border:'none', cursor:'pointer', padding:'0 16px', color:'#DC2626', fontSize:20 }}>✕</button>
+                  <div style={{ display:'flex' }}>
+                    <button onClick={() => openEditGame(i)}
+                      style={{ background:'none', border:'none', cursor:'pointer', padding:'0 10px', color:'#0284C7', fontSize:16 }} title="Editar">✏️</button>
+                    <button onClick={() => set('games', f.games.filter((_, j) => j !== i))}
+                      style={{ background:'none', border:'none', cursor:'pointer', padding:'0 16px 0 6px', color:'#DC2626', fontSize:20 }} title="Eliminar">✕</button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -347,7 +436,7 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
               </p>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                 <span style={{ fontSize:13, color:'#64748B' }}>{f.mapPoints.length} punto(s)</span>
-                <button onClick={() => setPOpen(true)} style={{
+                <button onClick={openNewPoint} style={{
                   background:'linear-gradient(135deg,#16A34A,#22C55E)', color:'white',
                   border:'none', borderRadius:10, padding:'8px 16px',
                   fontSize:13, fontWeight:700, cursor:'pointer',
@@ -357,7 +446,9 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
               {pOpen && (
                 <div style={{ background:'#F8FAFC', borderRadius:14, padding:18,
                   border:'1.5px solid #E2E8F0', display:'flex', flexDirection:'column', gap:12 }}>
-                  <div style={{ fontSize:15, fontWeight:800, fontFamily:'Syne,sans-serif' }}>Nuevo punto</div>
+                  <div style={{ fontSize:15, fontWeight:800, fontFamily:'Syne,sans-serif' }}>
+                    {pEditIdx !== null ? 'Editar punto' : 'Nuevo punto'}
+                  </div>
                   <div>
                     <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#64748B', marginBottom:6, letterSpacing:'.6px', textTransform:'uppercase' }}>Tipo</label>
                     <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
@@ -403,7 +494,7 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
                     <button onClick={addPoint} style={{
                       flex:1, background:'linear-gradient(135deg,#16A34A,#22C55E)', color:'white',
                       border:'none', borderRadius:10, padding:'11px', fontSize:14, fontWeight:700, cursor:'pointer',
-                    }}>✓ Añadir</button>
+                    }}>✓ {pEditIdx !== null ? 'Guardar' : 'Añadir'}</button>
                     <button onClick={() => setPOpen(false)} style={{
                       flex:1, background:'#F1F5F9', color:'#475569',
                       border:'none', borderRadius:10, padding:'11px', fontSize:14, fontWeight:700, cursor:'pointer',
@@ -424,8 +515,12 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
                     <div style={{ fontWeight:700, fontSize:14 }}>{pt.label}</div>
                     <div style={{ fontSize:11, color:'#94A3B8' }}>{pt.type} · {pt.lat}, {pt.lng}</div>
                   </div>
-                  <button onClick={() => set('mapPoints', f.mapPoints.filter((_, j) => j !== i))}
-                    style={{ background:'none', border:'none', cursor:'pointer', padding:'0 16px', color:'#DC2626', fontSize:20 }}>✕</button>
+                  <div style={{ display: 'flex' }}>
+                    <button onClick={() => openEditPoint(i)}
+                      style={{ background:'none', border:'none', cursor:'pointer', padding:'0 10px', color:'#16A34A', fontSize:16 }} title="Editar">✏️</button>
+                    <button onClick={() => set('mapPoints', f.mapPoints.filter((_, j) => j !== i))}
+                      style={{ background:'none', border:'none', cursor:'pointer', padding:'0 16px 0 6px', color:'#DC2626', fontSize:20 }} title="Eliminar">✕</button>
+                  </div>
                 </div>
               ))}
             </div>

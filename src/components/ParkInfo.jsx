@@ -1,15 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Info, Clock, Globe, MapPin } from 'lucide-react';
 import useInView from '../hooks/useInView';
 
-const HOURS = [
-  { day: 'Lunes – Viernes', time: '08:00 – 21:00' },
-  { day: 'Sábados',         time: '08:00 – 22:00' },
-  { day: 'Domingos',        time: '09:00 – 21:00' },
-];
-
 export default function ParkInfo({ park }) {
   const [ref, vis] = useInView();
+  const [expandedImg, setExpandedImg] = useState(null);
 
   return (
     <section id="info" style={{ padding: '100px 48px', background: 'white' }}>
@@ -91,7 +86,7 @@ export default function ParkInfo({ park }) {
               {[
                 { icon: <MapPin size={16} color={park.color} />, label: 'Dirección', value: `${park.address}, ${park.city}`, bg: `${park.color}10`, border: `${park.color}28` },
                 { icon: <Clock  size={16} color="#16A34A"    />, label: 'Entrada',   value: 'Gratuita · Acceso libre',        bg: '#F0FDF4',          border: '#BBF7D0'          },
-                { icon: <Globe  size={16} color="#7C3AED"    />, label: 'Premio',    value: `${park.badge} · Inclusividad`,   bg: '#F5F3FF',          border: '#DDD6FE'          },
+                { icon: <Globe  size={16} color="#7C3AED"    />, label: 'Premio',    value: `${park.badge} ${park.isInclusive ? '· ♿ Inclusivo' : ''}`,   bg: '#F5F3FF',          border: '#DDD6FE'          },
               ].map(item => (
                 <div key={item.label} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
@@ -108,26 +103,61 @@ export default function ParkInfo({ park }) {
               ))}
             </div>
 
-            <div style={{ background: '#FAFCFF', borderRadius: 14, border: '1px solid #F1F5F9', padding: '16px 18px' }}>
+            <div style={{ background: '#FAFCFF', borderRadius: 14, border: '1px solid #F1F5F9', padding: '16px 18px', marginBottom: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                 <Clock size={14} color={park.color} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: park.color,
                   letterSpacing: '.5px', textTransform: 'uppercase' }}>Horario orientativo</span>
               </div>
-              {HOURS.map(h => (
-                <div key={h.day} style={{
-                  display: 'flex', justifyContent: 'space-between',
-                  padding: '7px 0', borderBottom: '1px solid #F8FAFC',
-                }}>
-                  <span style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>{h.day}</span>
-                  <span style={{ fontSize: 13, color: park.color, fontWeight: 700 }}>{h.time}</span>
-                </div>
-              ))}
+              <div style={{ fontSize: 14, color: '#475569', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                {park.schedule || 'Consultar disponibilidad en el lugar'}
+              </div>
             </div>
+
+            {/* FOTOS ADICIONALES */}
+            {(park.photo2Url || park.photo3Url) && (
+              <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+                {park.photo2Url && (
+                  <div onClick={() => setExpandedImg(park.photo2Url)} style={{ width: 'calc(50% - 6px)', height: 160, borderRadius: 12, overflow: 'hidden', cursor: 'zoom-in', border: `1px solid ${park.color}20` }}>
+                    <img src={park.photo2Url} alt="Foto 2" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform .3s' }} onMouseEnter={e => e.currentTarget.style.transform='scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform='scale(1)'} />
+                  </div>
+                )}
+                {park.photo3Url && (
+                  <div onClick={() => setExpandedImg(park.photo3Url)} style={{ width: park.photo2Url ? 'calc(50% - 6px)' : '100%', height: 160, borderRadius: 12, overflow: 'hidden', cursor: 'zoom-in', border: `1px solid ${park.color}20` }}>
+                    <img src={park.photo3Url} alt="Foto 3" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform .3s' }} onMouseEnter={e => e.currentTarget.style.transform='scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform='scale(1)'} />
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         </div>
       </div>
+
+      {/* Lightbox */}
+      {expandedImg && (
+        <div 
+          onClick={() => setExpandedImg(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(15,23,42,.92)', backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 40, cursor: 'zoom-out',
+            animation: 'fadeIn .2s ease-out'
+          }}
+        >
+          <img src={expandedImg} alt="Ampliada" style={{
+            maxWidth: '100%', maxHeight: '100%', borderRadius: 20,
+            boxShadow: '0 24px 80px rgba(0,0,0,.6)',
+            animation: 'zoomIn .2s ease-out'
+          }} />
+          <div style={{ position: 'absolute', top: 24, right: 32, color: 'rgba(255,255,255,.6)', fontSize: 48, fontWeight: 300 }}>&times;</div>
+        </div>
+      )}
+
       <style>{`
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes zoomIn { from{transform:scale(.95)} to{transform:scale(1)} }
         @media(max-width:900px){
           .info-grid{ grid-template-columns:1fr !important; gap:40px !important }
           #info{ padding:60px 24px !important }
