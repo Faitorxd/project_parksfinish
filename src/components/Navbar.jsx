@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TreePine, MapPin, Menu, X, ShieldCheck } from 'lucide-react';
+import { MapPin, Menu, X, ShieldCheck } from 'lucide-react';
 
 const PARK_LINKS = [
   { label: 'Inicio',        id: 'inicio'        },
