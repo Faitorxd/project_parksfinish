@@ -4,12 +4,22 @@ import { BookOpen, X } from 'lucide-react';
 export default function FloatingPdfButton({ parkColor }) {
   const [showPdf, setShowPdf] = useState(false);
   const color = parkColor || '#0284C7';
+  const pdfUrl = "/20240909_Guía técnica Ayuntamiento de Yaiza Parques infantiles inclusivos.pdf";
+
+  const handleOpenPdf = () => {
+    // If mobile screen, open in new tab (native PDF viewer handles it better without downloading automatically on most modern phones, or allows easy viewing)
+    if (window.innerWidth <= 768) {
+      window.open(pdfUrl, '_blank');
+    } else {
+      setShowPdf(true);
+    }
+  };
 
   return (
     <>
       {/* Floating Button */}
       <button 
-        onClick={() => setShowPdf(true)}
+        onClick={handleOpenPdf}
         title="Ver Guía Técnica PDF"
         style={{
           position: 'fixed', bottom: 30, right: 30, zIndex: 900,
@@ -57,7 +67,7 @@ export default function FloatingPdfButton({ parkColor }) {
             animation: 'zoomIn .2s ease-out'
           }}>
             <iframe 
-              src="/20240909_Guía técnica Ayuntamiento de Yaiza Parques infantiles inclusivos.pdf#view=FitH"
+              src={`${pdfUrl}#view=FitH`}
               width="100%" height="100%" 
               style={{ border: 'none', background: 'white' }}
               title="Guía técnica Parques Inclusivos"

@@ -11,15 +11,15 @@ export default function Landing({ onStart }) {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      background: '#F6FBF7', 
+      backgroundImage: 'url(/Fondo1.png)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
       position: 'relative',
       overflow: 'hidden',
       fontFamily: 'Syne, sans-serif'
     }}>
-      {/* Decorative circles */}
-      <div style={{position: 'absolute', top: -40, left: -40, width: 250, height: 250, borderRadius: '50%', background: '#E6F4EA', opacity: 0.6}} />
-      <div style={{position: 'absolute', top: '20%', right: '10%', width: 120, height: 120, borderRadius: '50%', background: '#FDF6E3', opacity: 0.8}} />
-      <div style={{position: 'absolute', bottom: '15%', left: '15%', width: 150, height: 150, borderRadius: '50%', background: '#FBEBE8', opacity: 0.8}} />
+      {/* Custom Background Graphic */}
 
       {/* Main Content */}
       <div style={{ zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -39,18 +39,11 @@ export default function Landing({ onStart }) {
           @keyframes floatUpDown { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
         `}</style>
 
-        <h1 style={{
-          fontSize: 52, fontWeight: 800,
-          color: '#135147', margin: '0 0 4px 0', letterSpacing: '-1px'
-        }}>
-          PLayYaiza
-        </h1>
-        <p style={{
-          fontSize: 18, color: '#64748B', margin: '0 0 40px 0',
-          fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 500
-        }}>
-          Parques Infantiles de Yaiza
-        </p>
+        <img 
+          src="/PLAY YAIZA.png" 
+          alt="PlayYaiza Logo" 
+          style={{ height: 110, marginBottom: 40, objectFit: 'contain' }} 
+        />
 
         {/* Volcano Container */}
         <div style={{
@@ -84,9 +77,6 @@ export default function Landing({ onStart }) {
 
       </div>
       
-      {/* Bottom waves */}
-      <div style={{ position: 'absolute', bottom: -50, left: 0, right: 0, height: 150, background: 'rgba(230,244,234,0.5)', borderRadius: '50% 50% 0 0 / 100% 100% 0 0', zIndex: 1, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: -100, left: 0, right: 0, height: 150, background: '#E6F4EA', borderRadius: '50% 50% 0 0 / 100% 100% 0 0', zIndex: 1, pointerEvents: 'none' }} />
       
       <FloatingPdfButton parkColor="#10B981" />
     </div>

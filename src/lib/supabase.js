@@ -39,7 +39,8 @@ export async function fetchParks({ admin = false } = {}) {
     .from('parks')
     .select('*, games(*), map_points(*), reviews(*)')
     .order('created_at');
-  if (!admin) q = q.eq('active', true);
+  // admin mode also fetches soft-deleted; public mode fetches all to show inactive on map as grey
+  if (admin) q = q; // no extra filter needed
   const { data, error } = await q;
   if (error) throw error;
   return data.map(norm);

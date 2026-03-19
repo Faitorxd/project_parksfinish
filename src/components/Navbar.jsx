@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Menu, X, ShieldCheck } from 'lucide-react';
+import { TreePine, MapPin, Menu, X, ShieldCheck } from 'lucide-react';
 
 const PARK_LINKS = [
   { label: 'Inicio',        id: 'inicio'        },
@@ -45,23 +45,30 @@ export default function Navbar({ park, onHome, onAdmin }) {
           display: 'flex', alignItems: 'center', gap: 10,
           background: 'none', border: 'none', cursor: 'pointer', padding: 0,
         }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: park ? 10 : 0,
-            background: park ? `linear-gradient(135deg,${accentColor},${accentColor2})` : 'transparent',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: park ? `0 4px 10px ${accentColor}44` : 'none',
-            fontSize: park ? 18 : 0,
-          }}>
-            {park
-              ? <span>{park.emoji}</span>
-              : <img src="/image(1).png" alt="Logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />}
-          </div>
-          <span style={{
-            fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 16,
-            color: park ? '#0F172A' : '#115E59', letterSpacing: '-.3px',
-          }}>
-            {park ? park.name : 'PLayYaiza'}
-          </span>
+          {park ? (
+            <>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: `linear-gradient(135deg,${accentColor},${accentColor2})`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: `0 4px 10px ${accentColor}44`,
+                fontSize: 18,
+              }}>
+                <span>{park.emoji}</span>
+              </div>
+              <span style={{
+                fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 16,
+                color: '#0F172A', letterSpacing: '-.3px',
+              }}>
+                {park.name}
+              </span>
+            </>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <img src="/image(1).png" alt="Volcano Logo" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+              <img src="/PLAY YAIZA sin parques.png" alt="PlayYaiza Logo" style={{ height: 42, objectFit: 'contain' }} />
+            </div>
+          )}
         </button>
 
         {/* Desktop links — only in park detail */}

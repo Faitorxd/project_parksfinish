@@ -9,6 +9,9 @@ export default function Hero({ parks, onParkClick }) {
   const [search, setSearch] = useState('');
   const [onlyInclusive, setOnlyInclusive] = useState(false);
   
+  // All parks regardless of status for map display
+  const allParks = parks;
+  // Only active parks shown in the sidebar list
   const activeParks = parks.filter(p => p.active);
   const filteredParks = activeParks.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -16,6 +19,8 @@ export default function Hero({ parks, onParkClick }) {
     const matchesInclusive = onlyInclusive ? p.isInclusive : true;
     return matchesSearch && matchesInclusive;
   });
+  // Inactive parks to show as grey on map (explicit === false to avoid undefined)
+  const inactiveParks = parks.filter(p => p.active === false);
 
   useEffect(() => {
     const L = window.L;
@@ -40,7 +45,7 @@ export default function Hero({ parks, onParkClick }) {
       }
     });
 
-    // Add markers
+    // Add ACTIVE park markers (coloured, clickable)
     filteredParks.forEach(park => {
       const icon = L.divIcon({
         html: `<div style="width:40px;height:40px;border-radius:50%;background:${park.color};border:3px solid white;box-shadow:0 3px 10px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:transform 0.2s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">${park.emoji}</div>`,
@@ -57,7 +62,20 @@ export default function Hero({ parks, onParkClick }) {
         });
     });
 
-  }, [filteredParks]); 
+    // Add INACTIVE park markers (grey, non-clickable, with lock icon)
+    inactiveParks.forEach(park => {
+      const icon = L.divIcon({
+        html: `<div title="Parque no disponible" style="width:40px;height:40px;border-radius:50%;background:#94A3B8;border:3px solid #CBD5E1;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:not-allowed;opacity:0.7;filter:grayscale(1)">${park.emoji}</div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        className: ''
+      });
+      // No click handler — strictly non-interactive
+      L.marker([park.lat, park.lng], { icon, interactive: false })
+        .addTo(mapObj.current);
+    });
+
+  }, [parks]); 
 
   const handleParkClick = (park) => {
     setSelPark(park);
