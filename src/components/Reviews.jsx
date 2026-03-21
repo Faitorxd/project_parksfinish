@@ -28,6 +28,35 @@ function StarRating({ value, onChange, size = 24 }) {
   );
 }
 
+function ReviewCard({ r, park, i }) {
+  const [ref, vis] = useInView();
+  return (
+    <div ref={ref} style={{
+      background: '#FAFCFF', border: '1.5px solid #F1F5F9',
+      borderRadius: 20, padding: '24px',
+      opacity: vis ? 1 : 0, transform: vis ? 'none' : 'translateY(20px)',
+      transition: `all .5s ${i * 60}ms`,
+      boxShadow: '0 2px 10px rgba(0,0,0,.04)',
+    }}>
+      <StarRating value={r.stars} size={16} />
+      <p style={{ fontSize: 14, lineHeight: 1.75, color: '#475569',
+        margin: '14px 0', fontStyle: 'italic' }}>"{r.text}"</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{
+          width: 36, height: 36,
+          background: `linear-gradient(135deg,${park.color}18,${park.color2}18)`,
+          borderRadius: '50%', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', fontSize: 18, flexShrink: 0,
+        }}>{r.avatar}</div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{r.name}</div>
+          <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>{r.date}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Reviews({ park, onReviewAdded }) {
   const [stars,  setStars]  = useState(0);
   const [text,   setText]   = useState('');
@@ -84,35 +113,9 @@ export default function Reviews({ park, onReviewAdded }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 18 }}>
           {/* Existing reviews */}
-          {park.reviews.map((r, i) => {
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            const [ref, vis] = useInView();
-            return (
-              <div key={r.id} ref={ref} style={{
-                background: '#FAFCFF', border: '1.5px solid #F1F5F9',
-                borderRadius: 20, padding: '24px',
-                opacity: vis ? 1 : 0, transform: vis ? 'none' : 'translateY(20px)',
-                transition: `all .5s ${i * 60}ms`,
-                boxShadow: '0 2px 10px rgba(0,0,0,.04)',
-              }}>
-                <StarRating value={r.stars} size={16} />
-                <p style={{ fontSize: 14, lineHeight: 1.75, color: '#475569',
-                  margin: '14px 0', fontStyle: 'italic' }}>"{r.text}"</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 36, height: 36,
-                    background: `linear-gradient(135deg,${park.color}18,${park.color2}18)`,
-                    borderRadius: '50%', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: 18, flexShrink: 0,
-                  }}>{r.avatar}</div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{r.name}</div>
-                    <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>{r.date}</div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {park.reviews.map((r, i) => (
+            <ReviewCard key={r.id} r={r} park={park} i={i} />
+          ))}
 
           {/* Write review form */}
           <div style={{

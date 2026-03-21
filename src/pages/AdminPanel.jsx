@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LogOut, RefreshCw, Plus, Edit2, Trash2, PauseCircle, PlayCircle, MapPin } from 'lucide-react';
-import { signOut, createPark, updatePark, toggleActive, deletePark } from '../lib/supabase';
+import { signOut, createPark, updatePark, toggleActive, deletePark, saveSections } from '../lib/supabase';
 import ParkModal from '../admin/ParkModal';
 
 function Toast({ msg, type }) {
@@ -31,12 +31,24 @@ export default function AdminPanel({ parks, loading, onRefresh, onLogout }) {
   const handleLogout = async () => { await signOut(); onLogout(); };
 
   const doCreate = async data => {
-    try { await createPark(data); onRefresh(); setAdding(false); notify('Parque creado 🎉'); }
+    const { sections = [], ...parkData } = data;
+    try {
+      const created = await createPark(parkData);
+      if (created?.id) await saveSections(created.id, sections);
+      onRefresh(); setAdding(false); notify('Parque creado 🎉');
+      return created;
+    }
     catch (e) { notify(e.message || 'Error al crear', 'error'); }
   };
 
   const doUpdate = async data => {
-    try { await updatePark(editing.id, data); onRefresh(); setEditing(null); notify('Cambios guardados ✓'); }
+    const { sections, ...parkData } = data;
+    try {
+      const updated = await updatePark(editing.id, parkData);
+      if (sections !== undefined) await saveSections(editing.id, sections);
+      onRefresh(); setEditing(null); notify('Cambios guardados ✓');
+      return updated;
+    }
     catch (e) { notify(e.message || 'Error al guardar', 'error'); }
   };
 

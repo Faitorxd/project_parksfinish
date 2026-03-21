@@ -1,16 +1,47 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useRef, useState } from 'react';
-import { Navigation, MapPin, X } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { Navigation, MapPin } from 'lucide-react';
 import useInView from '../hooks/useInView';
 
 export default function MapSection({ park }) {
   const mapEl  = useRef(null);
   const mapObj = useRef(null);
-  const [sel,  setSel]  = useState(null);
-  const [hRef, hVis]    = useInView();
-  const [mRef, mVis]    = useInView();
+  const [hRef, hVis] = useInView();
+  const [mRef, mVis] = useInView();
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
+  const popupStyle = (color) => `
+    <style>
+      .lf-popup .leaflet-popup-content-wrapper {
+        border-radius: 14px !important;
+        box-shadow: 0 8px 30px rgba(0,0,0,.14) !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border: 1.5px solid ${color}28 !important;
+      }
+      .lf-popup .leaflet-popup-content { margin: 0 !important; width: auto !important; }
+      .lf-popup .leaflet-popup-tip-container { margin-top: -2px !important; }
+      .lf-popup .leaflet-popup-tip { background: white !important; box-shadow: none !important; }
+    </style>
+  `;
+
+  const buildPopup = (pt, color) => {
+    const photoHtml = pt.photo
+      ? `<img src="${pt.photo}" style="width:100%;height:110px;object-fit:cover;display:block"/>`
+      : '';
+    const titleColor = pt.color || color;
+    return `
+      ${popupStyle(titleColor)}
+      <div style="width:220px;font-family:'Plus Jakarta Sans',sans-serif;">
+        ${photoHtml}
+        <div style="padding:12px 14px 14px;">
+          <div style="font-size:13px;font-weight:800;color:${titleColor};margin-bottom:4px;">
+            ${pt.emoji || ''} ${pt.title || pt.label || ''}
+          </div>
+          <div style="font-size:11px;color:#64748B;line-height:1.5;">${pt.desc || pt.description || ''}</div>
+        </div>
+      </div>`;
+  };
+
   useEffect(() => {
     if (!mVis || mapObj.current) return;
     const L = window.L;
@@ -33,25 +64,25 @@ export default function MapSection({ park }) {
     // Main park pin
     const mainIcon = L.divIcon({
       html: `<div style="width:48px;height:48px;border-radius:50%;background:${park.color};border:3px solid white;box-shadow:0 3px 14px ${park.color}66;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer">${park.emoji}</div>`,
-      iconSize: [48, 48], iconAnchor: [24, 24], className: '',
+      iconSize: [48, 48], iconAnchor: [24, 48], popupAnchor: [0, -52], className: '',
     });
     L.marker([park.lat, park.lng], { icon: mainIcon })
       .addTo(mapObj.current)
-      .on('click', () => setSel({
-        emoji: park.emoji, title: park.name, desc: park.address,
-        color: park.color, photo: park.coverUrl,
-      }));
+      .bindPopup(buildPopup(
+        { title: park.name, desc: park.address, photo: park.coverUrl, emoji: park.emoji, color: park.color },
+        park.color
+      ), { className: 'lf-popup', maxWidth: 240 });
 
     // Zone markers
     park.mapPoints.forEach(pt => {
       const sz = pt.size || 34;
       const icon = L.divIcon({
         html: `<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${pt.color};border:3px solid white;box-shadow:0 3px 12px ${pt.color}55;display:flex;align-items:center;justify-content:center;font-size:${Math.round(sz * .42)}px;cursor:pointer;transition:transform .18s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''">${pt.emoji}</div>`,
-        iconSize: [sz, sz], iconAnchor: [sz / 2, sz / 2], className: '',
+        iconSize: [sz, sz], iconAnchor: [sz / 2, sz], popupAnchor: [0, -sz - 4], className: '',
       });
       L.marker([pt.lat, pt.lng], { icon })
         .addTo(mapObj.current)
-        .on('click', () => setSel(pt));
+        .bindPopup(buildPopup(pt, park.color), { className: 'lf-popup', maxWidth: 240 });
     });
 
     setTimeout(() => mapObj.current?.invalidateSize(), 150);
@@ -68,7 +99,7 @@ export default function MapSection({ park }) {
   ];
 
   return (
-    <section id="mapa" style={{ padding: '100px 48px', background: 'white' }}>
+    <section id="mapa" style={{ padding: '100px 48px', background: 'white', isolation: 'isolate', position: 'relative', zIndex: 0 }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
         {/* Header */}
@@ -158,41 +189,7 @@ export default function MapSection({ park }) {
           </div>
 
           {/* Leaflet container */}
-          <div style={{ position: 'relative' }}>
-            <div ref={mapEl} style={{ height: 460, width: '100%' }} />
-
-            {/* Selected point popup */}
-            {sel && (
-              <div style={{
-                position: 'absolute', bottom: 14, left: 14, right: 14, zIndex: 10,
-                background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(14px)',
-                border: `1.5px solid ${sel.color || park.color}28`, borderRadius: 16,
-                padding: '13px 15px', boxShadow: '0 8px 30px rgba(0,0,0,.1)',
-                display: 'flex', alignItems: 'center', gap: 12,
-                animation: 'fadeUp .2s ease',
-              }}>
-                {sel.photo
-                  ? <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flexShrink: 0 }}>
-                      <img src={sel.photo} alt={sel.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
-                  : <div style={{
-                      width: 44, height: 44, background: (sel.color || park.color) + '16',
-                      borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 20, flexShrink: 0,
-                    }}>{sel.emoji}</div>
-                }
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: sel.color || park.color }}>{sel.title || sel.label}</div>
-                  <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{sel.desc}</div>
-                </div>
-                <button onClick={() => setSel(null)} style={{
-                  width: 26, height: 26, background: '#F8FAFC', border: '1px solid #E2E8F0',
-                  borderRadius: '50%', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}><X size={12} color="#64748B" /></button>
-              </div>
-            )}
-          </div>
+          <div ref={mapEl} style={{ height: 460, width: '100%' }} />
 
           {/* Legend */}
           <div style={{
@@ -215,8 +212,7 @@ export default function MapSection({ park }) {
       </div>
 
       <style>{`
-        @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
-        @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.3} }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
         @media(max-width:900px){
           .map-header-grid{ grid-template-columns:1fr !important; gap:32px !important }
           #mapa{ padding:60px 20px !important }

@@ -27,32 +27,33 @@ export async function uploadImage(file, path) {
 const del = paths => paths.length &&
   supabase.storage.from(BUCKET).remove(paths);
 
-const coverPath = id    => `covers/${id}`;
-const photo2Path = id   => `photos2/${id}`;
-const photo3Path = id   => `photos3/${id}`;
-const gamePath  = (id,i)=> `games/${id}_${i}`;
-const pointPath = (id,i)=> `points/${id}_${i}`;
+const coverPath   = id      => `covers/${id}`;
+const photo2Path  = id      => `photos2/${id}`;
+const photo3Path  = id      => `photos3/${id}`;
+const gamePath    = (id,i)  => `games/${id}_${i}`;
+const pointPath   = (id,i)  => `points/${id}_${i}`;
+const sectionPhotoPath = (sid,i) => `sections/${sid}_${i}`;
 
 /* ─── PARKS — read ──────────────────────────────────────────── */
 export async function fetchParks({ admin = false } = {}) {
-  let q = supabase
-    .from('parks')
-    .select('*, games(*), map_points(*), reviews(*)')
-    .order('created_at');
-  // admin mode also fetches soft-deleted; public mode fetches all to show inactive on map as grey
-  if (admin) q = q; // no extra filter needed
-  const { data, error } = await q;
-  if (error) throw error;
-  return data.map(norm);
+  const [parksRes, sectionsRes] = await Promise.all([
+    supabase.from('parks')
+      .select('*, games(*), map_points(*), reviews(*)')
+      .order('created_at'),
+    supabase.from('park_sections').select('*').order('sort_order'),
+  ]);
+  if (parksRes.error) throw parksRes.error;
+  const allSections = sectionsRes.data || [];
+  return (parksRes.data || []).map(p => norm(p, allSections.filter(s => s.park_id === p.id)));
 }
 
 export async function fetchPark(id) {
-  const { data, error } = await supabase
-    .from('parks')
-    .select('*, games(*), map_points(*), reviews(*)')
-    .eq('id', id).single();
+  const [{ data, error }, { data: sections }] = await Promise.all([
+    supabase.from('parks').select('*, games(*), map_points(*), reviews(*)').eq('id', id).single(),
+    supabase.from('park_sections').select('*').eq('park_id', id).order('sort_order'),
+  ]);
   if (error) throw error;
-  return norm(data);
+  return norm(data, sections || []);
 }
 
 /* ─── PARKS — write ─────────────────────────────────────────── */
@@ -114,14 +115,15 @@ export async function updatePark(id, park) {
   if (error) throw error;
 
   if (games !== undefined) {
-    const { data: old } = await supabase.from('games').select('id').eq('park_id', id);
-    del((old || []).map((_, i) => gamePath(id, i)));
+    // Only delete storage files that are being replaced with a new upload
     await supabase.from('games').delete().eq('park_id', id);
     if (games.length) {
       const rows = [];
       for (let i = 0; i < games.length; i++) {
         const g = games[i];
-        let photo_url = g.photo || null;
+        // Only keep real Supabase URLs, never persist blob: temporary URLs
+        let photo_url = (g.photo && g.photo.startsWith('http')) ? g.photo : null;
+        // Only upload (and overwrite in storage) if a new file was selected
         if (g.photoFile) photo_url = await uploadImage(g.photoFile, gamePath(id, i));
         rows.push({
           park_id: id, emoji: g.emoji, name: g.name,
@@ -134,14 +136,15 @@ export async function updatePark(id, park) {
     }
   }
   if (mapPoints !== undefined) {
-    const { data: old } = await supabase.from('map_points').select('id').eq('park_id', id);
-    del((old || []).map((_, i) => pointPath(id, i)));
+    // Only delete storage files that are being replaced with a new upload
     await supabase.from('map_points').delete().eq('park_id', id);
     if (mapPoints.length) {
       const rows = [];
       for (let i = 0; i < mapPoints.length; i++) {
         const m = mapPoints[i];
-        let photo_url = m.photo || null;
+        // Only keep real Supabase URLs, never persist blob: temporary URLs
+        let photo_url = (m.photo && m.photo.startsWith('http')) ? m.photo : null;
+        // Only upload (and overwrite in storage) if a new file was selected
         if (m.photoFile) photo_url = await uploadImage(m.photoFile, pointPath(id, i));
         rows.push({
           park_id: id, type: m.type, emoji: m.emoji, label: m.label,
@@ -153,6 +156,7 @@ export async function updatePark(id, park) {
     }
   }
   return fetchPark(id);
+
 }
 
 export async function toggleActive(id, active) {
@@ -180,8 +184,60 @@ export async function addReview(parkId, review) {
   if (error) throw error;
 }
 
+/* ─── PARK SECTIONS — read ──────────────────────────────── */
+export async function fetchSections(parkId) {
+  const { data, error } = await supabase
+    .from('park_sections')
+    .select('*')
+    .eq('park_id', parkId)
+    .order('sort_order');
+  if (error) throw error;
+  return (data || []).map(normSection);
+}
+
+/* ─── PARK SECTIONS — write ─────────────────────────────── */
+export async function saveSections(parkId, sections) {
+  // Delete all existing sections for the park, then re-insert
+  await supabase.from('park_sections').delete().eq('park_id', parkId);
+
+  if (!sections.length) return;
+
+  const rows = [];
+  for (let i = 0; i < sections.length; i++) {
+    const s = sections[i];
+    let photoUrls = s.photoUrls || [];
+
+    // Upload new photo files if any
+    if (s.photoFiles && s.photoFiles.length) {
+      const sectionId = s.id || ('new_' + parkId + '_' + i);
+      const uploaded = [];
+      for (let j = 0; j < s.photoFiles.length; j++) {
+        const file = s.photoFiles[j];
+        if (file instanceof File) {
+          const url = await uploadImage(file, sectionPhotoPath(sectionId + '_' + Date.now(), j));
+          uploaded.push(url);
+        } else {
+          uploaded.push(file); // already a URL string
+        }
+      }
+      photoUrls = uploaded;
+    }
+
+    rows.push({
+      park_id:    parkId,
+      title:      s.title      || '',
+      content:    s.content    || '',
+      photo_urls: photoUrls,
+      sort_order: i,
+    });
+  }
+
+  const { error } = await supabase.from('park_sections').insert(rows);
+  if (error) throw error;
+}
+
 /* ─── NORMALIZE (DB → app shape) ───────────────────────────── */
-function norm(p) {
+function norm(p, rawSections = []) {
   return {
     id:          p.id,
     name:        p.name,
@@ -203,7 +259,7 @@ function norm(p) {
     photo2Url:   p.photo_2_url || null,
     photo3Url:   p.photo_3_url || null,
     schedule:    p.schedule?.info || '',
-    isInclusive: p.is_inclusive || false,
+    isInclusive: p.is_inclusive || '',
     mapsUrl:     `https://maps.google.com?q=${encodeURIComponent(`${p.address} ${p.city}`)}`,
     games: (p.games || [])
       .sort((a, b) => a.sort_order - b.sort_order)
@@ -223,7 +279,6 @@ function norm(p) {
         label: m.label, desc: m.description,
         lat: m.lat, lng: m.lng, color: m.color,
         photo: m.photo_url || null,
-        // map to marker shape used in MapSection
         title: m.label,
         size: m.type === 'parking' ? 34 : m.type === 'entrance' ? 28 : 36,
       })),
@@ -234,6 +289,19 @@ function norm(p) {
         name: r.name, stars: r.stars,
         text: r.text, date: ago(r.created_at),
       })),
+    sections: rawSections
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(normSection),
+  };
+}
+
+function normSection(s) {
+  return {
+    id:        s.id,
+    title:     s.title     || '',
+    content:   s.content   || '',
+    photoUrls: s.photo_urls || [],
+    sortOrder: s.sort_order || 0,
   };
 }
 
@@ -252,7 +320,7 @@ function toRow(p) {
       : (p.tags || '').split(',').map(t => t.trim()).filter(Boolean),
     active: p.active !== false,
     youtube_url: p.youtubeUrl || null,
-    is_inclusive: !!p.isInclusive,
+    is_inclusive: p.isInclusive || '',
     schedule: { info: p.schedule || '' },
   };
 }

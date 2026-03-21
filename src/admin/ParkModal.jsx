@@ -3,10 +3,11 @@ import { X } from 'lucide-react';
 import ImageUploader from './ImageUploader';
 
 const TABS = [
-  { id: 'basic',  label: '📋 Datos'         },
-  { id: 'cover',  label: '📸 Fotos'         },
-  { id: 'games',  label: '🎮 Juegos'         },
-  { id: 'points', label: '📍 Mapa'           },
+  { id: 'basic',    label: '📋 Datos'     },
+  { id: 'cover',    label: '📸 Fotos'     },
+  { id: 'games',    label: '🎮 Juegos'    },
+  { id: 'points',   label: '📍 Mapa'      },
+  { id: 'sections', label: '📖 Secciones'  },
 ];
 
 const PT_OPTS = [
@@ -56,7 +57,7 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
     active:      park?.active !== false,
     youtubeUrl:  park?.youtubeUrl  || '',
     schedule:    park?.schedule    || '',
-    isInclusive: park?.isInclusive || false,
+    isInclusive: park?.isInclusive || '',
     coverUrl:    park?.coverUrl    || null,
     coverFile:   null,
     photo2Url:   park?.photo2Url   || null,
@@ -65,6 +66,7 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
     photo3File:  null,
     games:       (park?.games     || []).map(g => ({ ...g, photoFile: null })),
     mapPoints:   (park?.mapPoints || []).map(m => ({ ...m, photoFile: null })),
+    sections:    (park?.sections  || []).map(s => ({ ...s, photoFiles: [] })),
   });
 
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
@@ -127,6 +129,48 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
       set('mapPoints', [...f.mapPoints, { ...pf, id: pf.id || ('mp' + Date.now()) }]);
     }
     setPOpen(false);
+  };
+
+  /* ── Section sub-form ── */
+  const [sOpen, setSOpen] = useState(false);
+  const [sEditIdx, setSEditIdx] = useState(null);
+  const [sf, setSf] = useState({ title: '', content: '', photoUrls: [], photoFiles: [] });
+
+  const openNewSection = () => {
+    setSf({ title: '', content: '', photoUrls: [], photoFiles: [] });
+    setSEditIdx(null);
+    setSOpen(true);
+  };
+
+  const openEditSection = (idx) => {
+    setSf({ ...f.sections[idx], photoFiles: [] });
+    setSEditIdx(idx);
+    setSOpen(true);
+  };
+
+  const addSection = () => {
+    if (!sf.title.trim()) return;
+    if (sEditIdx !== null) {
+      const upd = [...f.sections];
+      upd[sEditIdx] = sf;
+      set('sections', upd);
+    } else {
+      set('sections', [...f.sections, { ...sf, id: 'sec_' + Date.now() }]);
+    }
+    setSOpen(false);
+  };
+
+  const handleSectionPhotoFiles = (files) => {
+    const previews = files.map(f => f instanceof File ? URL.createObjectURL(f) : f);
+    setSf(p => ({ ...p, photoFiles: files, photoUrls: previews }));
+  };
+
+  const removeExistingPhoto = (idx) => {
+    setSf(p => ({
+      ...p,
+      photoUrls: p.photoUrls.filter((_, i) => i !== idx),
+      photoFiles: p.photoFiles.filter((_, i) => i !== idx),
+    }));
   };
 
   const submit = async () => {
@@ -281,12 +325,12 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
                   onBlur={e => e.target.style.borderColor='#E2E8F0'} />
               </Field>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-                <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer',
-                  fontSize:14, fontWeight:600, color:'#475569', userSelect:'none' }}>
-                  <input type="checkbox" checked={f.isInclusive} onChange={e => set('isInclusive', e.target.checked)}
-                    style={{ width:17, height:17, cursor:'pointer', accentColor:'#0284C7' }} />
-                  ♿ Parque inclusivo
-                </label>
+                <Field label="♿ Accesibilidad / Inclusivo">
+                  <input style={inputStyle} value={f.isInclusive} onChange={e => set('isInclusive', e.target.value)}
+                    placeholder="100% inclusivo, 50% inclusivo…"
+                    onFocus={e => e.target.style.borderColor='#0284C7'}
+                    onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+                </Field>
                 <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer',
                   fontSize:14, fontWeight:600, color:'#475569', userSelect:'none' }}>
                   <input type="checkbox" checked={f.active} onChange={e => set('active', e.target.checked)}
@@ -520,6 +564,139 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
                       style={{ background:'none', border:'none', cursor:'pointer', padding:'0 10px', color:'#16A34A', fontSize:16 }} title="Editar">✏️</button>
                     <button onClick={() => set('mapPoints', f.mapPoints.filter((_, j) => j !== i))}
                       style={{ background:'none', border:'none', cursor:'pointer', padding:'0 16px 0 6px', color:'#DC2626', fontSize:20 }} title="Eliminar">✕</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* ── SECCIONES ── */}
+          {tab === 'sections' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              <p style={{ fontSize:13, color:'#64748B', background:'#F0F9FF',
+                borderRadius:10, padding:'10px 14px', lineHeight:1.6 }}>
+                📖 Crea secciones de contenido ("Cómo llegar", "Accesibilidad"...) con texto y fotos. Aparecen en la página del parque entre la información principal y las reseñas.
+              </p>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:13, color:'#64748B' }}>{f.sections.length} sección(es)</span>
+                <button onClick={openNewSection} style={{
+                  background:'linear-gradient(135deg,#7C3AED,#A855F7)', color:'white',
+                  border:'none', borderRadius:10, padding:'8px 16px',
+                  fontSize:13, fontWeight:700, cursor:'pointer',
+                }}>+ Añadir sección</button>
+              </div>
+
+              {sOpen && (
+                <div style={{ background:'#F8FAFC', borderRadius:14, padding:18,
+                  border:'1.5px solid #E2E8F0', display:'flex', flexDirection:'column', gap:12 }}>
+                  <div style={{ fontSize:15, fontWeight:800, fontFamily:'Syne,sans-serif', color:'#7C3AED' }}>
+                    {sEditIdx !== null ? '✏️ Editar sección' : '➕ Nueva sección'}
+                  </div>
+                  <Field label="Título de la sección" required>
+                    <input style={inputStyle} value={sf.title}
+                      onChange={e => setSf(p => ({ ...p, title: e.target.value }))}
+                      placeholder="¿Cómo llegar? / Accesibilidad / Zonas de juego…"
+                      onFocus={e => e.target.style.borderColor='#7C3AED'}
+                      onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+                  </Field>
+                  <Field label="Texto de la sección (párrafos separados por saltos de línea)">
+                    <textarea style={{ ...inputStyle, resize:'vertical' }} rows={5}
+                      value={sf.content}
+                      onChange={e => setSf(p => ({ ...p, content: e.target.value }))}
+                      placeholder="El parque cuenta con acceso desde...
+
+También dispone de plazas reservadas..."
+                      onFocus={e => e.target.style.borderColor='#7C3AED'}
+                      onBlur={e => e.target.style.borderColor='#E2E8F0'} />
+                  </Field>
+
+                  {/* Fotos actuales */}
+                  {sf.photoUrls.length > 0 && (
+                    <div>
+                      <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#64748B',
+                        marginBottom:6, letterSpacing:'.6px', textTransform:'uppercase' }}>Fotos actuales</label>
+                      <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                        {sf.photoUrls.map((url, i) => (
+                          <div key={i} style={{ position:'relative', width:80, height:60, borderRadius:8, overflow:'hidden' }}>
+                            <img src={url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                            <button onClick={() => removeExistingPhoto(i)} style={{
+                              position:'absolute', top:2, right:2,
+                              background:'rgba(220,38,38,.85)', border:'none', borderRadius:'50%',
+                              width:18, height:18, cursor:'pointer', color:'white',
+                              fontSize:11, display:'flex', alignItems:'center', justifyContent:'center',
+                            }}>×</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Añadir fotos nuevas */}
+                  <Field label={`Añadir fotos (hasta ${6 - sf.photoUrls.length} más)`}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={e => {
+                        const files = Array.from(e.target.files).slice(0, 6 - sf.photoUrls.length);
+                        const newUrls = files.map(f => URL.createObjectURL(f));
+                        setSf(p => ({
+                          ...p,
+                          photoUrls: [...p.photoUrls, ...newUrls],
+                          photoFiles: [...p.photoFiles, ...files],
+                        }));
+                        e.target.value = '';
+                      }}
+                      style={{ fontSize:13, color:'#475569', padding:'8px 0' }}
+                    />
+                  </Field>
+
+                  <div style={{ display:'flex', gap:10 }}>
+                    <button onClick={addSection} style={{
+                      flex:1, background:'linear-gradient(135deg,#7C3AED,#A855F7)', color:'white',
+                      border:'none', borderRadius:10, padding:'11px', fontSize:14, fontWeight:700, cursor:'pointer',
+                    }}>✓ {sEditIdx !== null ? 'Guardar' : 'Añadir'}</button>
+                    <button onClick={() => setSOpen(false)} style={{
+                      flex:1, background:'#F1F5F9', color:'#475569',
+                      border:'none', borderRadius:10, padding:'11px', fontSize:14, fontWeight:700, cursor:'pointer',
+                    }}>Cancelar</button>
+                  </div>
+                </div>
+              )}
+
+              {f.sections.map((sec, i) => (
+                <div key={sec.id || i} style={{
+                  display:'flex', alignItems:'center', gap:12, background:'white',
+                  border:'1.5px solid #F1F5F9', borderRadius:12, padding:'12px 14px',
+                }}>
+                  {/* Photo thumb */}
+                  <div style={{
+                    width:56, height:56, borderRadius:10, flexShrink:0, overflow:'hidden',
+                    background:'#F5F3FF', display:'flex', alignItems:'center', justifyContent:'center',
+                  }}>
+                    {sec.photoUrls?.[0]
+                      ? <img src={sec.photoUrls[0]} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                      : <span style={{ fontSize:24 }}>📔</span>
+                    }
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontWeight:700, fontSize:14, color:'#0F172A', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{sec.title || 'Sin título'}</div>
+                    <div style={{ fontSize:11, color:'#94A3B8', marginTop:2 }}>
+                      {sec.photoUrls?.length || 0} foto(s) · {sec.content?.length > 60 ? sec.content.slice(0,60) + '…' : (sec.content || 'Sin texto')}
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', gap:4, flexShrink:0 }}>
+                    <button onClick={() => set('sections', f.sections.map((s,j) => j===i-1 ? f.sections[i] : j===i ? f.sections[i-1] : s))}
+                      disabled={i === 0}
+                      style={{ background:'none', border:'none', cursor: i===0?'default':'pointer', padding:'4px 6px', color:'#94A3B8', fontSize:16, opacity: i===0?0.3:1 }}
+                      title="Subir">↑</button>
+                    <button onClick={() => set('sections', f.sections.map((s,j) => j===i+1 ? f.sections[i] : j===i ? f.sections[i+1] : s))}
+                      disabled={i === f.sections.length-1}
+                      style={{ background:'none', border:'none', cursor: i===f.sections.length-1?'default':'pointer', padding:'4px 6px', color:'#94A3B8', fontSize:16, opacity: i===f.sections.length-1?0.3:1 }}
+                      title="Bajar">↓</button>
+                    <button onClick={() => openEditSection(i)}
+                      style={{ background:'none', border:'none', cursor:'pointer', padding:'4px 8px', color:'#7C3AED', fontSize:16 }} title="Editar">✏️</button>
+                    <button onClick={() => set('sections', f.sections.filter((_,j) => j !== i))}
+                      style={{ background:'none', border:'none', cursor:'pointer', padding:'4px 8px', color:'#DC2626', fontSize:20 }} title="Eliminar">×</button>
                   </div>
                 </div>
               ))}

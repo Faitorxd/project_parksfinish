@@ -86,7 +86,7 @@ export default function ParkInfo({ park }) {
               {[
                 { icon: <MapPin size={16} color={park.color} />, label: 'Dirección', value: `${park.address}, ${park.city}`, bg: `${park.color}10`, border: `${park.color}28` },
                 { icon: <Clock  size={16} color="#16A34A"    />, label: 'Entrada',   value: 'Gratuita · Acceso libre',        bg: '#F0FDF4',          border: '#BBF7D0'          },
-                { icon: <Globe  size={16} color="#7C3AED"    />, label: 'Premio',    value: `${park.badge} ${park.isInclusive ? '· ♿ Inclusivo' : ''}`,   bg: '#F5F3FF',          border: '#DDD6FE'          },
+                { icon: <Globe  size={16} color="#7C3AED"    />, label: 'Inclusivo', value: park.isInclusive ? `♿ ${park.isInclusive}` : 'Consultar accesibilidad', bg: '#F5F3FF', border: '#DDD6FE' },
               ].map(item => (
                 <div key={item.label} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
@@ -101,6 +101,29 @@ export default function ParkInfo({ park }) {
                   </div>
                 </div>
               ))}
+              {/* Dynamic star rating */}
+              {(() => {
+                const reviews = park.reviews || [];
+                const avg = reviews.length
+                  ? (reviews.reduce((s, r) => s + (r.stars || 0), 0) / reviews.length).toFixed(1)
+                  : null;
+                return (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    background: 'rgba(245,158,11,.07)', border: '1px solid rgba(245,158,11,.2)',
+                    borderRadius: 12, padding: '12px 16px',
+                  }}>
+                    <span style={{ fontSize: 16 }}>⭐</span>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8',
+                        letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 1 }}>Valoración</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#B45309' }}>
+                        {avg ? `${avg} / 5 · ${reviews.length} reseña${reviews.length !== 1 ? 's' : ''}` : 'Sin reseñas aún'}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div style={{ background: '#FAFCFF', borderRadius: 14, border: '1px solid #F1F5F9', padding: '16px 18px', marginBottom: 20 }}>

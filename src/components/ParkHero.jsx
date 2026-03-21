@@ -115,14 +115,13 @@ export default function ParkHero({ park }) {
             boxShadow: '0 4px 20px rgba(0,0,0,.08)',
           }}>
             {[
-              { emoji: '🥇', value: park.badge.split(' ')[0], label: 'Premio'     },
               { emoji: '🎢', value: park.games.length,        label: 'Juegos'     },
-              { emoji: '♿', value: park.isInclusive ? '100%' : 'No', label: 'Inclusivo'  },
+              { emoji: '♿', value: park.isInclusive || 'No', label: 'Inclusivo'  },
               { emoji: '⭐', value: park.rating,              label: 'Valoración' },
             ].map((s, i) => (
               <div key={i} style={{
                 padding: '14px 20px', textAlign: 'center',
-                borderRight: i < 3 ? `1px solid ${hasCover ? 'rgba(255,255,255,.12)' : '#F1F5F9'}` : 'none',
+                borderRight: i < 2 ? `1px solid ${hasCover ? 'rgba(255,255,255,.12)' : '#F1F5F9'}` : 'none',
               }}>
                 <div style={{ fontSize: 18, marginBottom: 3 }}>{s.emoji}</div>
                 <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 16, fontWeight: 800,
@@ -172,7 +171,7 @@ export default function ParkHero({ park }) {
                   <MapPin size={13} /> {park.address}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-                  {[['🎢', park.games.length, 'Juegos'], ['♿', park.isInclusive ? '100%' : 'No', 'Accesible'], ['⭐', park.rating, 'Rating']].map(([e, v, l]) => (
+                  {[['🎢', park.games.length, 'Juegos'], ['♿', park.isInclusive || 'No', 'Accesible'], ['⭐', park.rating, 'Rating']].map(([e, v, l]) => (
                     <div key={l} style={{
                       background: hasCover ? 'rgba(255,255,255,.08)' : '#F8FAFC',
                       borderRadius: 12, padding: '10px 6px', textAlign: 'center',
@@ -195,7 +194,7 @@ export default function ParkHero({ park }) {
                 display: 'flex', alignItems: 'center', gap: 9, animation: 'fadeUp .6s .6s both' }}>
                 <span style={{ fontSize: 22 }}>♿</span>
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#15803D' }}>100% Accesible</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#15803D' }}>{park.isInclusive}</div>
                   <div style={{ fontSize: 10, color: '#94A3B8' }}>Todas las capacidades</div>
                 </div>
               </div>

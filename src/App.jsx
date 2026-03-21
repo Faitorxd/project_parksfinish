@@ -5,6 +5,7 @@ import Navbar        from './components/Navbar';
 import Hero          from './components/Hero';
 import ParkHero      from './components/ParkHero';
 import ParkInfo      from './components/ParkInfo';
+import ParkSections  from './components/ParkSections';
 import ParkVideo     from './components/ParkVideo';
 import Games         from './components/Games';
 import MapSection    from './components/MapSection';
@@ -83,6 +84,7 @@ export default function App() {
         <Games    park={selPark} />
         <MapSection park={selPark} />
         <Accessibility park={selPark} />
+        <ParkSections park={selPark} />
         <Reviews   park={selPark} onReviewAdded={onReviewAdded} />
         <FloatingPdfButton parkColor={selPark.color} />
         <Footer    park={selPark} onHome={goHome} />
