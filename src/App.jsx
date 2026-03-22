@@ -78,16 +78,16 @@ export default function App() {
     return (
       <div>
         <Navbar park={selPark} onHome={goLanding} onAdmin={session ? goAdmin : goLogin} />
-        <ParkHero park={selPark} />
-        <ParkInfo park={selPark} />
-        <ParkVideo park={selPark} />
-        <Games    park={selPark} />
         <MapSection park={selPark} />
+        <ParkHero park={selPark} />
         <Accessibility park={selPark} />
+        <ParkInfo park={selPark} />
         <ParkSections park={selPark} />
-        <Reviews   park={selPark} onReviewAdded={onReviewAdded} />
+        <Games park={selPark} />
+        <Reviews park={selPark} onReviewAdded={onReviewAdded} />
+        <ParkVideo park={selPark} />
         <FloatingPdfButton parkColor={selPark.color} />
-        <Footer    park={selPark} onHome={goHome} />
+        <Footer park={selPark} onHome={goHome} />
       </div>
     );
   }

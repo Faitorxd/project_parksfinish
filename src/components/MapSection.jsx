@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef } from 'react';
-import { Navigation, MapPin } from 'lucide-react';
+import { Navigation, MapPin, Clock } from 'lucide-react';
 import useInView from '../hooks/useInView';
 
 export default function MapSection({ park }) {
@@ -141,6 +141,40 @@ export default function MapSection({ park }) {
                 </div>
               </div>
             ))}
+            {(() => {
+              const reviews = park.reviews || [];
+              const avg = reviews.length
+                ? (reviews.reduce((s, r) => s + (r.stars || 0), 0) / reviews.length).toFixed(1)
+                : null;
+              return (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  background: 'rgba(245,158,11,.07)', border: '1px solid rgba(245,158,11,.22)',
+                  borderRadius: 14, padding: '12px 16px',
+                }}>
+                  <span style={{ fontSize: 18 }}>⭐</span>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8',
+                      letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 1 }}>Valoración</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#B45309' }}>
+                      {avg ? `${avg} / 5 · ${reviews.length} reseña${reviews.length !== 1 ? 's' : ''}` : 'Sin reseñas aún'}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+            <div style={{
+              background: '#FAFCFF', borderRadius: 14, border: '1px solid #E2E8F0', padding: '12px 16px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <Clock size={13} color={park.color} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: park.color,
+                  letterSpacing: '.5px', textTransform: 'uppercase' }}>Horario orientativo</span>
+              </div>
+              <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                {park.schedule || 'Consultar disponibilidad en el lugar'}
+              </div>
+            </div>
             <a href={park.mapsUrl} target="_blank" rel="noreferrer" style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               background: `linear-gradient(135deg,${park.color},${park.color2})`,

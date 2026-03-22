@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TreePine, MapPin, Menu, X, ShieldCheck } from 'lucide-react';
+import { TreePine, Menu, X, ShieldCheck } from 'lucide-react';
 
 const PARK_LINKS = [
   { label: 'Inicio',        id: 'inicio'        },
@@ -94,21 +94,7 @@ export default function Navbar({ park, onHome, onAdmin }) {
 
         {/* Right side */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {park && (
-            <a href={park.mapsUrl} target="_blank" rel="noreferrer" className="nav-cta"
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: `linear-gradient(135deg,${accentColor},${accentColor2})`,
-                color: 'white', textDecoration: 'none', borderRadius: 10,
-                padding: '9px 20px', fontSize: 13, fontWeight: 700,
-                boxShadow: `0 4px 12px ${accentColor}44`,
-                transition: 'transform .2s,box-shadow .2s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-              onMouseLeave={e => e.currentTarget.style.transform = ''}>
-              <MapPin size={14} /> Cómo llegar
-            </a>
-          )}
+
           <button onClick={onAdmin} className="nav-admin" style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: 'rgba(15,23,42,.05)', border: '1px solid #E2E8F0',

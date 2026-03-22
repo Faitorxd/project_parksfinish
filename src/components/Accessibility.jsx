@@ -98,17 +98,6 @@ export default function Accessibility({ park }) {
               {park.description}
             </p>
           </div>
-          <a href={park.mapsUrl} target="_blank" rel="noreferrer" style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: `linear-gradient(135deg,${park.color},${park.color2})`,
-            color: 'white', textDecoration: 'none', borderRadius: 12,
-            padding: '13px 24px', fontSize: 14, fontWeight: 700,
-            fontFamily: 'Plus Jakarta Sans,sans-serif',
-            boxShadow: `0 6px 18px ${park.color}33`,
-            whiteSpace: 'nowrap',
-          }}>
-            Cómo llegar ↗
-          </a>
         </div>
       </div>
       <style>{`@media(max-width:640px){#accesibilidad{padding:60px 20px !important}}`}</style>

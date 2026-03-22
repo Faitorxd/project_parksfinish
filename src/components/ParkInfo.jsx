@@ -101,40 +101,6 @@ export default function ParkInfo({ park }) {
                   </div>
                 </div>
               ))}
-              {/* Dynamic star rating */}
-              {(() => {
-                const reviews = park.reviews || [];
-                const avg = reviews.length
-                  ? (reviews.reduce((s, r) => s + (r.stars || 0), 0) / reviews.length).toFixed(1)
-                  : null;
-                return (
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    background: 'rgba(245,158,11,.07)', border: '1px solid rgba(245,158,11,.2)',
-                    borderRadius: 12, padding: '12px 16px',
-                  }}>
-                    <span style={{ fontSize: 16 }}>⭐</span>
-                    <div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8',
-                        letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 1 }}>Valoración</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#B45309' }}>
-                        {avg ? `${avg} / 5 · ${reviews.length} reseña${reviews.length !== 1 ? 's' : ''}` : 'Sin reseñas aún'}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-
-            <div style={{ background: '#FAFCFF', borderRadius: 14, border: '1px solid #F1F5F9', padding: '16px 18px', marginBottom: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                <Clock size={14} color={park.color} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: park.color,
-                  letterSpacing: '.5px', textTransform: 'uppercase' }}>Horario orientativo</span>
-              </div>
-              <div style={{ fontSize: 14, color: '#475569', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                {park.schedule || 'Consultar disponibilidad en el lugar'}
-              </div>
             </div>
 
             {/* FOTOS ADICIONALES */}
