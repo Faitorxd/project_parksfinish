@@ -21,7 +21,7 @@ export async function uploadImage(file, path) {
   const { error } = await supabase.storage
     .from(BUCKET).upload(path, file, { upsert: true, contentType: file.type });
   if (error) throw error;
-  return pub(path);
+  return pub(path) + '?t=' + Date.now();
 }
 
 const del = paths => paths.length &&
