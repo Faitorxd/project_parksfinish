@@ -24,15 +24,23 @@ export default function Landing({ onStart }) {
       {/* Main Content */}
       <div style={{ zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         
-        <div style={{
+        <a 
+          href="https://yaiza.es/" 
+          target="_blank" 
+          rel="noreferrer"
+          style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           background: 'white', padding: '8px 20px', borderRadius: 30,
           fontSize: 13, fontWeight: 700, color: '#2B836B', marginBottom: 20,
           boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-          fontFamily: 'Plus Jakarta Sans, sans-serif'
-        }}>
+          fontFamily: 'Plus Jakarta Sans, sans-serif',
+          textDecoration: 'none', transition: 'transform 0.2s',
+          cursor: 'pointer'
+        }}
+        onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+        onMouseLeave={e => e.currentTarget.style.transform = ''}>
           <MapPin size={15} /> AYUNTAMIENTO DE YAIZA
-        </div>
+        </a>
 
         <style>{`
           @keyframes fadeIn { from{opacity:0} to{opacity:1} }
