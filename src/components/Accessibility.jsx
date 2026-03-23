@@ -81,24 +81,6 @@ export default function Accessibility({ park }) {
           })}
         </div>
 
-        {/* Callout */}
-        <div style={{
-          marginTop: 48,
-          background: `linear-gradient(135deg,${park.color}0e,${park.color2}0e)`,
-          border: `1.5px solid ${park.color}28`, borderRadius: 24,
-          padding: '36px 40px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexWrap: 'wrap', gap: 24,
-        }}>
-          <div>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🥇</div>
-            <h3 style={{ fontFamily: 'Syne,sans-serif', fontSize: 22, fontWeight: 800,
-              color: '#0F172A', marginBottom: 6 }}>{park.badge}</h3>
-            <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, maxWidth: 460 }}>
-              {park.description}
-            </p>
-          </div>
-        </div>
       </div>
       <style>{`@media(max-width:640px){#accesibilidad{padding:60px 20px !important}}`}</style>
     </section>
