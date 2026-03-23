@@ -27,12 +27,29 @@ export async function uploadImage(file, path) {
 const del = paths => paths.length &&
   supabase.storage.from(BUCKET).remove(paths);
 
-const coverPath   = id      => `covers/${id}`;
-const photo2Path  = id      => `photos2/${id}`;
-const photo3Path  = id      => `photos3/${id}`;
-const gamePath    = (id,i)  => `games/${id}_${i}`;
-const pointPath   = (id,i)  => `points/${id}_${i}`;
-const sectionPhotoPath = (sid,i) => `sections/${sid}_${i}`;
+const coverPath   = id      => `covers/${id}_${Date.now()}`;
+const photo2Path  = id      => `photos2/${id}_${Date.now()}`;
+const photo3Path  = id      => `photos3/${id}_${Date.now()}`;
+const gamePath    = (id,i)  => `games/${id}_${i}_${Date.now()}`;
+const pointPath   = (id,i)  => `points/${id}_${i}_${Date.now()}`;
+const sectionPhotoPath = (sid,i) => `sections/${sid}_${i}_${Date.now()}`;
+
+// Helper: Extrae la ruta interna del storage desde una URL pública para poder borrarla
+const getPathFromUrl = url => {
+  if (!url) return null;
+  const baseUrl = pub('').split('?')[0]; // elimina params si los hubiera
+  const pureUrl = url.split('?')[0];
+  if (pureUrl.startsWith(baseUrl)) {
+    return pureUrl.replace(baseUrl, '');
+  }
+  return null;
+};
+
+// Borra la imagen antigua si existía una URL previa
+const deleteOldImageIfAny = async (oldUrl) => {
+  const oldPath = getPathFromUrl(oldUrl);
+  if (oldPath) await del([oldPath]);
+};
 
 /* ─── PARKS — read ──────────────────────────────────────────── */
 export async function fetchParks({ admin = false } = {}) {
@@ -108,9 +125,18 @@ export async function createPark(park) {
 export async function updatePark(id, park) {
   const { games, mapPoints, coverFile, photo2File, photo3File, ...rest } = park;
   const upd = toRow(rest);
-  if (coverFile) upd.cover_url = await uploadImage(coverFile, coverPath(id));
-  if (photo2File) upd.photo_2_url = await uploadImage(photo2File, photo2Path(id));
-  if (photo3File) upd.photo_3_url = await uploadImage(photo3File, photo3Path(id));
+  if (coverFile) {
+    if (park.coverUrl) await deleteOldImageIfAny(park.coverUrl);
+    upd.cover_url = await uploadImage(coverFile, coverPath(id));
+  }
+  if (photo2File) {
+    if (park.photo2Url) await deleteOldImageIfAny(park.photo2Url);
+    upd.photo_2_url = await uploadImage(photo2File, photo2Path(id));
+  }
+  if (photo3File) {
+    if (park.photo3Url) await deleteOldImageIfAny(park.photo3Url);
+    upd.photo_3_url = await uploadImage(photo3File, photo3Path(id));
+  }
   const { error } = await supabase.from('parks').update(upd).eq('id', id);
   if (error) throw error;
 
@@ -124,7 +150,10 @@ export async function updatePark(id, park) {
         // Only keep real Supabase URLs, never persist blob: temporary URLs
         let photo_url = (g.photo && g.photo.startsWith('http')) ? g.photo : null;
         // Only upload (and overwrite in storage) if a new file was selected
-        if (g.photoFile) photo_url = await uploadImage(g.photoFile, gamePath(id, i));
+        if (g.photoFile) {
+          if (photo_url) await deleteOldImageIfAny(photo_url);
+          photo_url = await uploadImage(g.photoFile, gamePath(id, i));
+        }
         rows.push({
           park_id: id, emoji: g.emoji, name: g.name,
           short_desc: g.shortDesc || '', full_desc: g.fullDesc || '',
@@ -145,7 +174,10 @@ export async function updatePark(id, park) {
         // Only keep real Supabase URLs, never persist blob: temporary URLs
         let photo_url = (m.photo && m.photo.startsWith('http')) ? m.photo : null;
         // Only upload (and overwrite in storage) if a new file was selected
-        if (m.photoFile) photo_url = await uploadImage(m.photoFile, pointPath(id, i));
+        if (m.photoFile) {
+          if (photo_url) await deleteOldImageIfAny(photo_url);
+          photo_url = await uploadImage(m.photoFile, pointPath(id, i));
+        }
         rows.push({
           park_id: id, type: m.type, emoji: m.emoji, label: m.label,
           description: m.desc || '', lat: +m.lat, lng: +m.lng,
@@ -165,15 +197,21 @@ export async function toggleActive(id, active) {
 }
 
 export async function deletePark(id) {
-  const { data: g } = await supabase.from('games').select('id').eq('park_id', id);
-  const { data: p } = await supabase.from('map_points').select('id').eq('park_id', id);
-  del([
-    coverPath(id),
-    photo2Path(id),
-    photo3Path(id),
-    ...(g  || []).map((_, i) => gamePath(id, i)),
-    ...(p  || []).map((_, i) => pointPath(id, i)),
-  ]);
+  const { data: g } = await supabase.from('games').select('photo_url').eq('park_id', id);
+  const { data: p } = await supabase.from('map_points').select('photo_url').eq('park_id', id);
+  const { data: sec } = await supabase.from('park_sections').select('photo_urls').eq('park_id', id);
+  const { data: main } = await supabase.from('parks').select('cover_url, photo_2_url, photo_3_url').eq('id', id).single();
+  
+  const toDeleteUrl = [
+    main?.cover_url, main?.photo_2_url, main?.photo_3_url,
+    ...(g || []).map(x => x.photo_url),
+    ...(p || []).map(x => x.photo_url),
+  ];
+  if (sec) sec.forEach(s => { if (s.photo_urls) toDeleteUrl.push(...s.photo_urls) });
+  
+  const paths = toDeleteUrl.map(getPathFromUrl).filter(Boolean);
+  if (paths.length) await del(paths);
+
   const { error } = await supabase.from('parks').delete().eq('id', id);
   if (error) throw error;
 }
