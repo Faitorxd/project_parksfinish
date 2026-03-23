@@ -95,7 +95,12 @@ export default function MapSection({ park }) {
   const steps = [
     { n: 1, t: 'Conduce o camina', d: `Dirígete a ${park.address}, ${park.city}.` },
     { n: 2, t: 'Aparca fácil',     d: 'Plazas PMR señalizadas justo frente al parque.' },
-    { n: 3, t: 'Entra',            d: `${park.mapPoints.filter(p => p.type === 'entrance').length || 4} entradas accesibles, todas adaptadas.` },
+    { n: 3, t: 'Entra',            d: (() => {
+      const ent = park.mapPoints?.filter(p => p.type === 'entrance').length || 0;
+      if (ent === 1) return '1 entrada accesible y adaptada.';
+      if (ent > 1) return `${ent} entradas accesibles, todas adaptadas.`;
+      return 'Entradas accesibles y adaptadas.';
+    })() },
   ];
 
   return (
