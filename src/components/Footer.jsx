@@ -43,7 +43,7 @@ export default function Footer({ park, onHome }) {
             <p style={{ fontSize: 14, lineHeight: 1.8, color: 'rgba(255,255,255,.5)', maxWidth: 300, marginBottom: 20 }}>
               {park
                 ? park.description.slice(0, 120) + '…'
-                : 'Red de parques infantiles 100% inclusivos en Madrid, donde todos los niños juegan juntos.'}
+                : 'Red de parques infantiles inclusivos en el municipio de Yaiza, donde todos los niños juegan juntos.'}
             </p>
             {park && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'rgba(255,255,255,.45)' }}>
@@ -80,8 +80,8 @@ export default function Footer({ park, onHome }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
                 { label: 'Google Maps',        href: park?.mapsUrl || 'https://maps.google.com' },
-                { label: 'Parques Inclusivos', href: 'https://www.parquesinfantilesinclusivos.es' },
-                { label: 'Ayuntamiento',       href: 'https://www.madrid.es' },
+                { label: 'Parques Inclusivos', href: '#' },
+                { label: 'Ayuntamiento',       href: 'https://yaiza.es/' },
               ].map(l => (
                 <a key={l.label} href={l.href} target="_blank" rel="noreferrer" style={{
                   display: 'flex', alignItems: 'center', gap: 6,
@@ -99,9 +99,16 @@ export default function Footer({ park, onHome }) {
 
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexWrap: 'wrap', gap: 12, fontSize: 12, color: 'rgba(255,255,255,.28)',
+          flexWrap: 'wrap', gap: 12, fontSize: 13, color: 'rgba(255,255,255,.4)',
         }}>
-          <span>© 2025 Parques Inclusivos · Madrid</span>
+          <span>© 2025 Parques Inclusivos · Yaiza</span>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'rgba(245,158,11,.1)', padding: '6px 14px', borderRadius: 20,
+            border: '1px solid rgba(245,158,11,.2)', color: '#FCD34D', fontWeight: 600, fontSize: 12
+          }}>
+            <span>🚧</span> Página en construcción
+          </div>
         </div>
       </div>
       <style>{`
