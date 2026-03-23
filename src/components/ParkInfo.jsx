@@ -10,57 +10,11 @@ export default function ParkInfo({ park }) {
     <section id="info" style={{ padding: '100px 48px', background: 'white' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div ref={ref} style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 72, alignItems: 'center',
+          maxWidth: 800, margin: '0 auto', /* centered container */
           opacity: vis ? 1 : 0, transform: vis ? 'none' : 'translateY(28px)', transition: 'all .7s',
         }} className="info-grid">
 
-          {/* Left visual */}
-          <div style={{ position: 'relative' }}>
-            <div style={{
-              position: 'absolute', inset: '-16px -16px 16px 16px',
-              background: `linear-gradient(135deg,${park.color}12,${park.color2}12)`,
-              borderRadius: 28, zIndex: 0,
-            }} />
-            <div style={{
-              position: 'relative', zIndex: 1, background: 'white', borderRadius: 24,
-              border: `1.5px solid ${park.color}20`, overflow: 'hidden',
-              boxShadow: `0 12px 40px ${park.color}16`,
-            }}>
-              <div style={{ height: 8, background: `linear-gradient(90deg,${park.color},${park.color2})` }} />
-              {park.coverUrl
-                ? <img src={park.coverUrl} alt={park.name}
-                    style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }} />
-                : <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: `linear-gradient(135deg,${park.color}10,${park.color2}10)`, fontSize: 80 }}>
-                    {park.emoji}
-                  </div>
-              }
-              <div style={{ padding: '24px 28px' }}>
-                <h3 style={{ fontFamily: 'Syne,sans-serif', fontSize: 20, fontWeight: 800,
-                  color: '#0F172A', marginBottom: 8, textAlign: 'center' }}>{park.name}</h3>
-                <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.75,
-                  textAlign: 'center', marginBottom: 20 }}>{park.description}</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-                  {park.tags.slice(0, 5).map((t, i) => (
-                    <span key={i} style={{
-                      background: `${park.color}12`, color: park.color,
-                      border: `1px solid ${park.color}25`, borderRadius: 20,
-                      padding: '5px 12px', fontSize: 12, fontWeight: 600,
-                    }}>{t}</span>
-                  ))}
-                </div>
-              </div>
-              <div style={{ borderTop: '1px solid #F1F5F9', padding: '16px 28px',
-                display: 'flex', alignItems: 'center', gap: 8, background: '#FAFCFF' }}>
-                <MapPin size={14} color={park.color} strokeWidth={2.5} />
-                <span style={{ fontSize: 13, color: '#64748B', fontWeight: 500 }}>
-                  {park.address}, {park.city}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right text */}
+          {/* Right text (now the only content) */}
           <div>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
