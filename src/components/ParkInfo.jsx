@@ -78,9 +78,6 @@ export default function ParkInfo({ park }) {
               Un espacio para<br />
               <span style={{ color: park.color }}>la inclusión total</span>
             </h2>
-            <p style={{ fontSize: 15, lineHeight: 1.85, color: '#64748B', marginBottom: 32 }}>
-              {park.description}
-            </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
               {[
