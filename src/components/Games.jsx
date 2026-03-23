@@ -62,67 +62,31 @@ function Card({ g, delay, onClick }) {
 function Modal({ g, onClose }) {
   if (!g) return null;
   return (
-    <div onClick={e => e.target === e.currentTarget && onClose()} style={{
-      position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)',
-      backdropFilter: 'blur(8px)', zIndex: 500,
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
-    }}>
-      <div style={{
-        background: 'white', borderRadius: 28, maxWidth: 460, width: '100%',
-        boxShadow: '0 32px 80px rgba(0,0,0,.18)',
-        border: `1.5px solid ${g.color}25`,
-        animation: 'popUp .3s cubic-bezier(.34,1.56,.64,1)',
-        overflow: 'hidden',
-      }}>
-        {/* Photo header */}
-        {g.photo
-          ? <div style={{ height: 220, position: 'relative', overflow: 'hidden' }}>
-              <img src={g.photo} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', inset: 0,
-                background: 'linear-gradient(to top,rgba(0,0,0,.5) 0%,transparent 55%)' }} />
-              <button onClick={onClose} style={{
-                position: 'absolute', top: 14, right: 14,
-                background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: 10,
-                width: 32, height: 32, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}><X size={15} color="#64748B" /></button>
-            </div>
-          : <div style={{ padding: '28px 36px 0', display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={onClose} style={{
-                background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10,
-                width: 32, height: 32, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}><X size={15} color="#64748B" /></button>
-            </div>
-        }
-        <div style={{ padding: g.photo ? '20px 36px 36px' : '0 36px 36px' }}>
-          {!g.photo && (
-            <div style={{
-              width: 68, height: 68, background: g.light, border: `1.5px solid ${g.color}30`,
-              borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 34, margin: '0 auto 14px',
-            }}>{g.emoji}</div>
-          )}
-          {g.tag && (
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-              <span style={{ background: g.light, color: g.color, border: `1px solid ${g.color}28`,
-                borderRadius: 20, padding: '3px 12px', fontSize: 11, fontWeight: 700,
-                letterSpacing: '.4px', textTransform: 'uppercase' }}>{g.tag}</span>
-            </div>
-          )}
-          <h3 style={{ fontFamily: 'Syne,sans-serif', fontSize: 22, fontWeight: 800,
-            color: '#0F172A', textAlign: 'center', marginBottom: 12 }}>{g.name}</h3>
-          <p style={{ fontSize: 14, lineHeight: 1.75, color: '#475569',
-            textAlign: 'center', marginBottom: 24 }}>{g.fullDesc || g.desc}</p>
-          <button onClick={onClose} style={{
-            width: '100%', padding: 13,
-            background: `linear-gradient(135deg,${g.color},${g.color}bb)`,
-            color: 'white', border: 'none', borderRadius: 12,
-            fontSize: 14, fontWeight: 700, cursor: 'pointer',
-            fontFamily: 'Plus Jakarta Sans,sans-serif',
-          }}>Cerrar</button>
-        </div>
-      </div>
+    <div 
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(15,23,42,.92)', backdropFilter: 'blur(10px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 40, cursor: 'zoom-out',
+        animation: 'fadeIn .2s ease-out'
+      }}
+    >
+      {g.photo ? (
+        <img src={g.photo} alt={g.name} style={{
+          maxWidth: '100%', maxHeight: '100%', borderRadius: 20,
+          boxShadow: '0 24px 80px rgba(0,0,0,.6)',
+          animation: 'zoomIn .2s ease-out', objectFit: 'contain'
+        }} />
+      ) : (
+        <div style={{
+          width: 300, height: 300, borderRadius: 20,
+          background: g.light || '#EFF6FF', border: `2px solid ${g.color || '#ccc'}40`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 120, animation: 'zoomIn .2s ease-out'
+        }}>{g.emoji}</div>
+      )}
+      <div style={{ position: 'absolute', top: 24, right: 32, color: 'rgba(255,255,255,.6)', fontSize: 48, fontWeight: 300 }}>&times;</div>
     </div>
   );
 }
@@ -156,7 +120,7 @@ export default function Games({ park }) {
           </h2>
           <p style={{ fontSize: 15, color: '#64748B', lineHeight: 1.7, maxWidth: 520, margin: '0 auto' }}>
             Cada elemento garantiza accesibilidad plena y máximo valor lúdico.
-            Toca cualquier juego para saber más.
+            Toca cualquier juego para ver su imagen ampliada.
           </p>
         </div>
 
@@ -188,7 +152,8 @@ export default function Games({ park }) {
       <Modal g={selected} onClose={() => setSelected(null)} />
 
       <style>{`
-        @keyframes popUp { from{opacity:0;transform:scale(.88) translateY(20px)} to{opacity:1;transform:none} }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes zoomIn { from{transform:scale(.95)} to{transform:scale(1)} }
         @media(max-width:640px){ #juegos{ padding:60px 20px !important } }
       `}</style>
     </section>
