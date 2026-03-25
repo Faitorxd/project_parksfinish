@@ -110,7 +110,7 @@ export default function Hero({ parks, onParkClick }) {
               onChange={e => setOnlyInclusive(e.target.checked)}
               style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#0284C7' }} 
             />
-            ♿ Solo parques inclusivos
+            <img src="/Grupo.svg" alt="Inclusivo" style={{ width: 18, height: 18 }} /> Solo parques inclusivos
           </label>
         </div>
 

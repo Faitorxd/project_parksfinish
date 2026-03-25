@@ -37,7 +37,7 @@ export default function ParkInfo({ park }) {
               {[
                 { icon: <MapPin size={16} color={park.color} />, label: 'Dirección', value: `${park.address}, ${park.city}`, bg: `${park.color}10`, border: `${park.color}28` },
                 { icon: <Clock  size={16} color="#16A34A"    />, label: 'Entrada',   value: 'Gratuita · Acceso libre',        bg: '#F0FDF4',          border: '#BBF7D0'          },
-                { icon: <Globe  size={16} color="#7C3AED"    />, label: 'Inclusivo', value: park.isInclusive ? `♿ ${park.isInclusive}` : 'Consultar accesibilidad', bg: '#F5F3FF', border: '#DDD6FE' },
+                { icon: <Globe  size={16} color="#7C3AED"    />, label: 'Inclusivo', value: park.isInclusive ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><img src="/Grupo.svg" alt="Inclusivo" style={{ width: 16, height: 16 }} /> {park.isInclusive}</span> : 'Consultar accesibilidad', bg: '#F5F3FF', border: '#DDD6FE' },
               ].map(item => (
                 <div key={item.label} style={{
                   display: 'flex', alignItems: 'center', gap: 12,

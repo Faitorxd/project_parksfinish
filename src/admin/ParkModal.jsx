@@ -325,7 +325,7 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
                   onBlur={e => e.target.style.borderColor='#E2E8F0'} />
               </Field>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-                <Field label="♿ Accesibilidad / Inclusivo">
+                <Field label="Accesibilidad / Inclusivo">
                   <input style={inputStyle} value={f.isInclusive} onChange={e => set('isInclusive', e.target.value)}
                     placeholder="100% inclusivo, 50% inclusivo…"
                     onFocus={e => e.target.style.borderColor='#0284C7'}
