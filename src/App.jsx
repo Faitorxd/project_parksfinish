@@ -8,6 +8,7 @@ import ParkInfo      from './components/ParkInfo';
 import ParkSections  from './components/ParkSections';
 import ParkVideo     from './components/ParkVideo';
 import Games         from './components/Games';
+import Sports        from './components/Sports';
 import MapSection    from './components/MapSection';
 import Accessibility from './components/Accessibility';
 import Reviews       from './components/Reviews';
@@ -84,6 +85,7 @@ export default function App() {
         <ParkInfo park={selPark} />
         <ParkSections park={selPark} />
         <Games park={selPark} />
+        <Sports park={selPark} />
         <Reviews park={selPark} onReviewAdded={onReviewAdded} />
         <ParkVideo park={selPark} />
         <FloatingPdfButton parkColor={selPark.color} />

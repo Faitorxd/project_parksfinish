@@ -31,6 +31,7 @@ const coverPath   = id      => `covers/${id}_${Date.now()}`;
 const photo2Path  = id      => `photos2/${id}_${Date.now()}`;
 const photo3Path  = id      => `photos3/${id}_${Date.now()}`;
 const gamePath    = (id,i)  => `games/${id}_${i}_${Date.now()}`;
+const sportPath   = (id,i)  => `sports/${id}_${i}_${Date.now()}`;
 const pointPath   = (id,i)  => `points/${id}_${i}_${Date.now()}`;
 const sectionPhotoPath = (sid,i) => `sections/${sid}_${i}_${Date.now()}`;
 
@@ -55,7 +56,7 @@ const deleteOldImageIfAny = async (oldUrl) => {
 export async function fetchParks({ admin = false } = {}) {
   const [parksRes, sectionsRes] = await Promise.all([
     supabase.from('parks')
-      .select('*, games(*), map_points(*), reviews(*)')
+      .select('*, games(*), sports(*), map_points(*), reviews(*)')
       .order('created_at'),
     supabase.from('park_sections').select('*').order('sort_order'),
   ]);
@@ -66,7 +67,7 @@ export async function fetchParks({ admin = false } = {}) {
 
 export async function fetchPark(id) {
   const [{ data, error }, { data: sections }] = await Promise.all([
-    supabase.from('parks').select('*, games(*), map_points(*), reviews(*)').eq('id', id).single(),
+    supabase.from('parks').select('*, games(*), sports(*), map_points(*), reviews(*)').eq('id', id).single(),
     supabase.from('park_sections').select('*').eq('park_id', id).order('sort_order'),
   ]);
   if (error) throw error;
@@ -75,7 +76,7 @@ export async function fetchPark(id) {
 
 /* ─── PARKS — write ─────────────────────────────────────────── */
 export async function createPark(park) {
-  const { games = [], mapPoints = [], coverFile, photo2File, photo3File, ...rest } = park;
+  const { games = [], sports = [], mapPoints = [], coverFile, photo2File, photo3File, ...rest } = park;
   const { data: np, error } = await supabase
     .from('parks').insert([toRow(rest)]).select().single();
   if (error) throw error;
@@ -105,6 +106,21 @@ export async function createPark(park) {
     }
     await supabase.from('games').insert(rows);
   }
+  if (sports.length) {
+    const rows = [];
+    for (let i = 0; i < sports.length; i++) {
+      const s = sports[i];
+      let photo_url = null;
+      if (s.photoFile) photo_url = await uploadImage(s.photoFile, sportPath(pid, i));
+      rows.push({
+        park_id: pid, emoji: s.emoji, name: s.name,
+        short_desc: s.shortDesc || '', full_desc: s.fullDesc || '',
+        tag: s.tag || '', color: s.color || '#ea580c', light: s.light || '#fff7ed',
+        photo_url, sort_order: i,
+      });
+    }
+    await supabase.from('sports').insert(rows);
+  }
   if (mapPoints.length) {
     const rows = [];
     for (let i = 0; i < mapPoints.length; i++) {
@@ -123,7 +139,7 @@ export async function createPark(park) {
 }
 
 export async function updatePark(id, park) {
-  const { games, mapPoints, coverFile, photo2File, photo3File, ...rest } = park;
+  const { games, sports, mapPoints, coverFile, photo2File, photo3File, ...rest } = park;
   const upd = toRow(rest);
   if (coverFile) {
     if (park.coverUrl) await deleteOldImageIfAny(park.coverUrl);
@@ -164,6 +180,30 @@ export async function updatePark(id, park) {
       await supabase.from('games').insert(rows);
     }
   }
+  if (sports !== undefined) {
+    // Only delete storage files that are being replaced with a new upload
+    await supabase.from('sports').delete().eq('park_id', id);
+    if (sports.length) {
+      const rows = [];
+      for (let i = 0; i < sports.length; i++) {
+        const s = sports[i];
+        // Only keep real Supabase URLs, never persist blob: temporary URLs
+        let photo_url = (s.photo && s.photo.startsWith('http')) ? s.photo : null;
+        // Only upload (and overwrite in storage) if a new file was selected
+        if (s.photoFile) {
+          if (photo_url) await deleteOldImageIfAny(photo_url);
+          photo_url = await uploadImage(s.photoFile, sportPath(id, i));
+        }
+        rows.push({
+          park_id: id, emoji: s.emoji, name: s.name,
+          short_desc: s.shortDesc || '', full_desc: s.fullDesc || '',
+          tag: s.tag || '', color: s.color || '#ea580c', light: s.light || '#fff7ed',
+          photo_url, sort_order: i,
+        });
+      }
+      await supabase.from('sports').insert(rows);
+    }
+  }
   if (mapPoints !== undefined) {
     // Only delete storage files that are being replaced with a new upload
     await supabase.from('map_points').delete().eq('park_id', id);
@@ -198,6 +238,7 @@ export async function toggleActive(id, active) {
 
 export async function deletePark(id) {
   const { data: g } = await supabase.from('games').select('photo_url').eq('park_id', id);
+  const { data: sp } = await supabase.from('sports').select('photo_url').eq('park_id', id);
   const { data: p } = await supabase.from('map_points').select('photo_url').eq('park_id', id);
   const { data: sec } = await supabase.from('park_sections').select('photo_urls').eq('park_id', id);
   const { data: main } = await supabase.from('parks').select('cover_url, photo_2_url, photo_3_url').eq('id', id).single();
@@ -205,6 +246,7 @@ export async function deletePark(id) {
   const toDeleteUrl = [
     main?.cover_url, main?.photo_2_url, main?.photo_3_url,
     ...(g || []).map(x => x.photo_url),
+    ...(sp || []).map(x => x.photo_url),
     ...(p || []).map(x => x.photo_url),
   ];
   if (sec) sec.forEach(s => { if (s.photo_urls) toDeleteUrl.push(...s.photo_urls) });
@@ -309,6 +351,17 @@ function norm(p, rawSections = []) {
         color: g.color || '#0284C7',
         light: g.light || '#EFF6FF',
         photo: g.photo_url || null,
+      })),
+    sports: (p.sports || [])
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(s => ({
+        id: s.id, emoji: s.emoji, name: s.name,
+        shortDesc: s.short_desc, fullDesc: s.full_desc,
+        tag: s.tag || 'General',
+        desc: s.full_desc || s.short_desc,
+        color: s.color || '#ea580c',
+        light: s.light || '#fff7ed',
+        photo: s.photo_url || null,
       })),
     mapPoints: (p.map_points || [])
       .sort((a, b) => a.sort_order - b.sort_order)

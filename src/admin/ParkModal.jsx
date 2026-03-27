@@ -6,6 +6,7 @@ const TABS = [
   { id: 'basic',    label: '📋 Datos'     },
   { id: 'cover',    label: '📸 Fotos'     },
   { id: 'games',    label: '🎮 Juegos'    },
+  { id: 'sports',   label: '💪 Deportes'  },
   { id: 'points',   label: '📍 Mapa'      },
   { id: 'sections', label: '📖 Secciones'  },
 ];
@@ -65,6 +66,7 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
     photo3Url:   park?.photo3Url   || null,
     photo3File:  null,
     games:       (park?.games     || []).map(g => ({ ...g, photoFile: null })),
+    sports:      (park?.sports    || []).map(s => ({ ...s, photoFile: null })),
     mapPoints:   (park?.mapPoints || []).map(m => ({ ...m, photoFile: null })),
     sections:    (park?.sections  || []).map(s => ({ ...s, photoFiles: [] })),
   });
@@ -99,6 +101,36 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
       set('games', [...f.games, { ...gf, id: gf.id || ('g' + Date.now()) }]);
     }
     setGOpen(false);
+  };
+
+  /* ── Sport sub-form ── */
+  const [spOpen, setSpOpen] = useState(false);
+  const [spEditIdx, setSpEditIdx] = useState(null);
+  const [spf, setSpf] = useState({ emoji:'💪', name:'', tag:'', shortDesc:'', fullDesc:'',
+    color:'#ea580c', light:'#fff7ed', photo:null, photoFile:null });
+
+  const openNewSport = () => {
+    setSpf({ emoji:'💪', name:'', tag:'', shortDesc:'', fullDesc:'', color:'#ea580c', light:'#fff7ed', photo:null, photoFile:null });
+    setSpEditIdx(null);
+    setSpOpen(true);
+  };
+
+  const openEditSport = (idx) => {
+    setSpf(f.sports[idx]);
+    setSpEditIdx(idx);
+    setSpOpen(true);
+  };
+
+  const addSport = () => {
+    if (!spf.name.trim()) return;
+    if (spEditIdx !== null) {
+      const newSports = [...f.sports];
+      newSports[spEditIdx] = spf;
+      set('sports', newSports);
+    } else {
+      set('sports', [...f.sports, { ...spf, id: spf.id || ('sp' + Date.now()) }]);
+    }
+    setSpOpen(false);
   };
 
   /* ── Point sub-form ── */
@@ -464,6 +496,103 @@ export default function ParkModal({ mode, park, onSave, onClose }) {
                     <button onClick={() => openEditGame(i)}
                       style={{ background:'none', border:'none', cursor:'pointer', padding:'0 10px', color:'#0284C7', fontSize:16 }} title="Editar">✏️</button>
                     <button onClick={() => set('games', f.games.filter((_, j) => j !== i))}
+                      style={{ background:'none', border:'none', cursor:'pointer', padding:'0 16px 0 6px', color:'#DC2626', fontSize:20 }} title="Eliminar">✕</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── DEPORTES ── */}
+          {tab === 'sports' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:13, color:'#64748B' }}>{f.sports.length} elemento(s)</span>
+                <button onClick={openNewSport} style={{
+                  background:'linear-gradient(135deg,#ea580c,#f97316)', color:'white',
+                  border:'none', borderRadius:10, padding:'8px 16px',
+                  fontSize:13, fontWeight:700, cursor:'pointer',
+                }}>+ Añadir elemento</button>
+              </div>
+
+              {spOpen && (
+                <div style={{ background:'#F8FAFC', borderRadius:14, padding:18,
+                  border:'1.5px solid #E2E8F0', display:'flex', flexDirection:'column', gap:12 }}>
+                  <div style={{ fontSize:15, fontWeight:800, fontFamily:'Syne,sans-serif' }}>
+                    {spEditIdx !== null ? 'Editar elemento' : 'Nuevo elemento'}
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'80px 1fr', gap:10 }}>
+                    <Field label="Emoji">
+                      <input style={inputStyle} value={spf.emoji} onChange={e => setSpf(p => ({...p, emoji:e.target.value}))}
+                        onFocus={e=>e.target.style.borderColor='#ea580c'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                    </Field>
+                    <Field label="Nombre" required>
+                      <input style={inputStyle} value={spf.name} onChange={e => setSpf(p => ({...p, name:e.target.value}))} placeholder="Máquina de remo"
+                        onFocus={e=>e.target.style.borderColor='#ea580c'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                    </Field>
+                  </div>
+                  <Field label="Categoría (tag)">
+                    <input style={inputStyle} value={spf.tag} onChange={e => setSpf(p => ({...p, tag:e.target.value}))} placeholder="Cardio, Fuerza, Inclusivo…"
+                      onFocus={e=>e.target.style.borderColor='#ea580c'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                  </Field>
+                  <Field label="Descripción corta (tarjeta)">
+                    <input style={inputStyle} value={spf.shortDesc} onChange={e => setSpf(p => ({...p, shortDesc:e.target.value}))} placeholder="Breve descripción para la tarjeta"
+                      onFocus={e=>e.target.style.borderColor='#ea580c'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                  </Field>
+                  <Field label="Descripción completa (modal)">
+                    <textarea style={{ ...inputStyle, resize:'none' }} rows={3}
+                      value={spf.fullDesc} onChange={e => setSpf(p => ({...p, fullDesc:e.target.value}))} placeholder="Explicación detallada del elemento…"
+                      onFocus={e=>e.target.style.borderColor='#ea580c'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                  </Field>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    <div>
+                      <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#64748B', marginBottom:5, letterSpacing:'.6px', textTransform:'uppercase' }}>Color</label>
+                      <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                        <input type="color" value={spf.color} onChange={e => setSpf(p=>({...p,color:e.target.value}))}
+                          style={{ width:40,height:34,border:'1.5px solid #E2E8F0',borderRadius:8,cursor:'pointer',padding:2 }}/>
+                        <span style={{ fontSize:12, color:'#64748B' }}>{spf.color}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#64748B', marginBottom:5, letterSpacing:'.6px', textTransform:'uppercase' }}>Fondo claro</label>
+                      <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                        <input type="color" value={spf.light} onChange={e => setSpf(p=>({...p,light:e.target.value}))}
+                          style={{ width:40,height:34,border:'1.5px solid #E2E8F0',borderRadius:8,cursor:'pointer',padding:2 }}/>
+                        <span style={{ fontSize:12, color:'#64748B' }}>{spf.light}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <ImageUploader label="Foto del elemento" hint="Aparece en la tarjeta y en el modal"
+                    currentUrl={spf.photo} aspect="4/3"
+                    onFile={file => setSpf(p => ({...p, photoFile:file, photo:file?URL.createObjectURL(file):null}))}/>
+                  <div style={{ display:'flex', gap:10 }}>
+                    <button onClick={addSport} style={{
+                      flex:1, background:'linear-gradient(135deg,#ea580c,#f97316)', color:'white',
+                      border:'none', borderRadius:10, padding:'11px', fontSize:14, fontWeight:700, cursor:'pointer',
+                    }}>✓ {spEditIdx !== null ? 'Guardar' : 'Añadir'}</button>
+                    <button onClick={() => setSpOpen(false)} style={{
+                      flex:1, background:'#F1F5F9', color:'#475569',
+                      border:'none', borderRadius:10, padding:'11px', fontSize:14, fontWeight:700, cursor:'pointer',
+                    }}>Cancelar</button>
+                  </div>
+                </div>
+              )}
+
+              {f.sports.map((s, i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', background:'white',
+                  border:'1.5px solid #F1F5F9', borderRadius:12, overflow:'hidden' }}>
+                  <div style={{ width:60, height:60, flexShrink:0, background:s.light||'#fff7ed',
+                    display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+                    {s.photo ? <img src={s.photo} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : <span style={{ fontSize:28 }}>{s.emoji}</span>}
+                  </div>
+                  <div style={{ flex:1, padding:'10px 14px' }}>
+                    <div style={{ fontWeight:700, fontSize:14 }}>{s.name}</div>
+                    <div style={{ fontSize:11, color:'#94A3B8' }}>{s.tag} · {s.shortDesc?.slice(0,50)}</div>
+                  </div>
+                  <div style={{ display:'flex' }}>
+                    <button onClick={() => openEditSport(i)}
+                      style={{ background:'none', border:'none', cursor:'pointer', padding:'0 10px', color:'#ea580c', fontSize:16 }} title="Editar">✏️</button>
+                    <button onClick={() => set('sports', f.sports.filter((_, j) => j !== i))}
                       style={{ background:'none', border:'none', cursor:'pointer', padding:'0 16px 0 6px', color:'#DC2626', fontSize:20 }} title="Eliminar">✕</button>
                   </div>
                 </div>
