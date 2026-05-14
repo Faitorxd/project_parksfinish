@@ -55,12 +55,13 @@ export default function Landing({ onStart }) {
 
         {/* Volcano Container */}
         <div style={{
-          width: 320, height: 320, background: '#EAE1DB',
-          borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          position: 'relative', marginBottom: 40
+          width: 320, height: 320,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'relative', marginBottom: 40,
+          animation: 'floatUpDown 3s ease-in-out infinite',
         }}>
           <div style={{ position: 'absolute', top: 12, right: 12, fontSize: 24, color: '#F59E0B' }}>✨</div>
-          <img src="/image(1).png" alt="Volcano Logo" style={{ width: '85%', height: 'auto', objectFit: 'contain' }} />
+          <img src="/image(1).png" alt="Volcano Logo" style={{ width: '85%', height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.15))' }} />
         </div>
 
         <button onClick={onStart} style={{

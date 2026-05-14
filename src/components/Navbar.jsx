@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, ShieldCheck } from 'lucide-react';
+import { Menu, X, ShieldCheck, ArrowLeft, ChevronLeft } from 'lucide-react';
 
 const PARK_LINKS = [
   { label: 'Inicio',        id: 'inicio'        },
@@ -10,7 +10,7 @@ const PARK_LINKS = [
   { label: 'Reseñas',       id: 'resenas'        },
 ];
 
-export default function Navbar({ park, onHome, onAdmin }) {
+export default function Navbar({ park, onHome, onAdmin, onBack }) {
   const [scrolled, setScrolled] = useState(false);
   const [open,     setOpen]     = useState(false);
 
@@ -95,6 +95,27 @@ export default function Navbar({ park, onHome, onAdmin }) {
         {/* Right side */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
 
+          {/* Back to parks button — desktop, only in park detail */}
+          {park && onBack && (
+            <button
+              id="back-to-parks-desktop"
+              onClick={onBack}
+              className="nav-back-btn"
+              aria-label="Volver a la lista de parques"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: `${accentColor}12`, border: `1.5px solid ${accentColor}30`,
+                borderRadius: 10, padding: '8px 16px', fontSize: 12, fontWeight: 700,
+                cursor: 'pointer', color: accentColor, fontFamily: 'Plus Jakarta Sans,sans-serif',
+                transition: 'all .2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = `${accentColor}22`; }}
+              onMouseLeave={e => { e.currentTarget.style.background = `${accentColor}12`; }}
+            >
+              <ArrowLeft size={13} /> Volver a parques
+            </button>
+          )}
+
           <button onClick={onAdmin} className="nav-admin" style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: 'rgba(15,23,42,.05)', border: '1px solid #E2E8F0',
@@ -136,8 +157,19 @@ export default function Navbar({ park, onHome, onAdmin }) {
             {l.label}
           </button>
         ))}
+        {/* Back to parks option in mobile menu */}
+        {park && onBack && (
+          <button onClick={() => { onBack(); setOpen(false); }} style={{
+            marginTop: 8, display: 'flex', alignItems: 'center', gap: 8,
+            background: `${accentColor}12`, border: `1.5px solid ${accentColor}30`,
+            borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 700,
+            cursor: 'pointer', color: accentColor,
+          }}>
+            <ArrowLeft size={16} /> Volver a parques
+          </button>
+        )}
         <button onClick={() => { onAdmin(); setOpen(false); }} style={{
-          marginTop: 16, display: 'flex', alignItems: 'center', gap: 8,
+          marginTop: 8, display: 'flex', alignItems: 'center', gap: 8,
           background: 'rgba(15,23,42,.05)', border: '1px solid #E2E8F0',
           borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 700,
           cursor: 'pointer', color: '#64748B',
@@ -146,11 +178,48 @@ export default function Navbar({ park, onHome, onAdmin }) {
         </button>
       </div>
 
+      {/* Sticky back button — mobile only, park detail view */}
+      {park && onBack && (
+        <button
+          id="back-to-parks-mobile"
+          onClick={onBack}
+          aria-label="Volver a la lista de parques"
+          className="back-floating-btn"
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 195,
+            display: 'none',           /* shown via CSS below */
+            alignItems: 'center',
+            gap: 8,
+            background: `linear-gradient(135deg, ${accentColor}, ${accentColor2})`,
+            color: 'white',
+            border: 'none',
+            borderRadius: 50,
+            padding: '13px 28px',
+            fontSize: 15,
+            fontWeight: 800,
+            fontFamily: 'Plus Jakarta Sans, sans-serif',
+            cursor: 'pointer',
+            boxShadow: `0 8px 28px ${accentColor}55`,
+            letterSpacing: '.1px',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <ChevronLeft size={20} strokeWidth={2.5} />
+          Volver a parques
+        </button>
+      )}
+
       <style>{`
         @media(max-width:900px){
           .nav-links,.nav-cta{ display:none !important }
           .nav-ham{ display:block !important }
           .nav-admin{ display:none !important }
+          .nav-back-btn{ display:none !important }
+          .back-floating-btn{ display:flex !important }
           nav{ padding:14px 24px !important }
         }
       `}</style>

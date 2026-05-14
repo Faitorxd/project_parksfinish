@@ -17,6 +17,7 @@ import Footer        from './components/Footer';
 import Landing       from './components/Landing';
 import AdminLogin    from './pages/AdminLogin';
 import AdminPanel    from './pages/AdminPanel';
+import AccessibilityWidget from './components/AccessibilityWidget';
 
 export default function App() {
   const [parks,    setParks]    = useState([]);
@@ -78,7 +79,7 @@ export default function App() {
   if (view === 'park' && selPark) {
     return (
       <div>
-        <Navbar park={selPark} onHome={goLanding} onAdmin={session ? goAdmin : goLogin} />
+        <Navbar park={selPark} onHome={goLanding} onAdmin={session ? goAdmin : goLogin} onBack={goHome} />
         <MapSection park={selPark} />
         <ParkHero park={selPark} />
         <Accessibility park={selPark} />
@@ -89,6 +90,7 @@ export default function App() {
         <Reviews park={selPark} onReviewAdded={onReviewAdded} />
         <ParkVideo park={selPark} />
         <FloatingPdfButton parkColor={selPark.color} />
+        <AccessibilityWidget />
         <Footer park={selPark} onHome={goHome} />
       </div>
     );
@@ -117,6 +119,7 @@ export default function App() {
         <>
           <Hero parks={parks} onParkClick={goPark} />
           <FloatingPdfButton parkColor="#0284C7" />
+          <AccessibilityWidget />
         </>
       )}
     </div>
